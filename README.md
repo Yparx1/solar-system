@@ -82,3 +82,16 @@ http://localhost:8080
 ## Notes
 
 The visual orbit spacing is compressed so children can see all planets on one screen. The orbital *timing ratios* are the physics logic applied in the animation.
+
+
+## v6 updates
+- Added a 3-second loading screen at launch.
+- Added subtle generated planet tones when clicking/tapping planets or the Moon.
+
+
+## v7 changes
+- Starts at 1x speed.
+- Speed control cycles: ⏸ 1× → ⏸ 2× → ⏸ 4× → ⏸ 8× → ▶ paused.
+- Premium 3-second kid-friendly loading screen.
+- Planet positions are initialized from approximate J2000 mean longitudes and advance using real orbital period ratios.
+- Info panel includes each body’s real revolution period.

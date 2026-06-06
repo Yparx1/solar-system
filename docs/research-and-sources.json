@@ -1,0 +1,11 @@
+{
+  "learning_design_notes": [
+    "Short facts, mini missions, and interactive selection were chosen because NASA Space Place targets upper-elementary children with games, activities, and interactive space content.",
+    "Planet facts are written using NASA Science/Space Place style summaries and rounded values appropriate for a kids guide."
+  ],
+  "suggested_official_image_sources": {
+    "NASA Space Place Planets": "https://spaceplace.nasa.gov/planets/",
+    "NASA Solar System": "https://science.nasa.gov/solar-system/",
+    "NASA Planet Galleries": "https://science.nasa.gov/gallery/"
+  }
+}

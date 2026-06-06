@@ -6,7 +6,7 @@ window.PLANET_DATA = [
     "color": "#b8b1a5",
     "nodeRadius": 4,
     "orbitAU": 0.39,
-    "periodYears": 0.240846,
+    "periodYears": 0.2408467,
     "distance": "57.9 million km",
     "diameter": "4,879 km",
     "day": "59 Earth days",
@@ -17,8 +17,12 @@ window.PLANET_DATA = [
     "wow": "A day-night temperature swing here is wild because Mercury has almost no blanket of air.",
     "orbitSeconds": 8.791,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "88 Earth days"
+    "motion": "Prograde orbit",
+    "year": "88 Earth days",
+    "discovery": "Known since ancient times; no single discoverer/date.",
+    "revolution": "88 Earth days",
+    "mass": "3.30 \u00d7 10\u00b2\u00b3 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "venus",
@@ -27,19 +31,23 @@ window.PLANET_DATA = [
     "color": "#e8cda0",
     "nodeRadius": 6,
     "orbitAU": 0.72,
-    "periodYears": 0.615198,
+    "periodYears": 0.61519726,
     "distance": "108.2 million km",
     "diameter": "12,104 km",
     "day": "243 Earth days",
     "moons": "0",
     "badge": "Cloudy oven planet",
-    "kidFact": "Venus is wrapped in thick clouds and is the hottest planet in our solar system.",
+    "kidFact": "Venus is wrapped in thick clouds, is the hottest planet, and spins backward compared with most planets.",
     "mission": "Imagine landing a robot here. What would it need to survive the heat and pressure?",
     "wow": "Venus spins backward compared with most planets.",
     "orbitSeconds": 22.455,
-    "orbitDirection": -1,
-    "motion": "Retrograde visual orbit",
-    "year": "225 Earth days"
+    "orbitDirection": 1,
+    "motion": "Prograde orbit; retrograde spin",
+    "year": "225 Earth days",
+    "discovery": "Known since ancient times; no single discoverer/date.",
+    "revolution": "225 Earth days",
+    "mass": "4.87 \u00d7 10\u00b2\u2074 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "earth",
@@ -59,8 +67,12 @@ window.PLANET_DATA = [
     "wow": "Earth is our comparison planet for almost everything in space science.",
     "orbitSeconds": 36.5,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "365 Earth days"
+    "motion": "Prograde orbit",
+    "year": "365.25 Earth days",
+    "discovery": "Known since prehistory; not discovered by one person.",
+    "revolution": "365.25 Earth days",
+    "mass": "5.97 \u00d7 10\u00b2\u2074 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "mars",
@@ -69,7 +81,7 @@ window.PLANET_DATA = [
     "color": "#c85a2d",
     "nodeRadius": 5,
     "orbitAU": 1.52,
-    "periodYears": 1.8808,
+    "periodYears": 1.8808476,
     "distance": "227.9 million km",
     "diameter": "6,779 km",
     "day": "24.6 hours",
@@ -78,10 +90,14 @@ window.PLANET_DATA = [
     "kidFact": "Mars is a cold desert world, and NASA robots have explored it for years.",
     "mission": "Search the picture for rusty colors. Mars looks red because of iron-rich dust.",
     "wow": "Mars has giant volcanoes, canyons, dust storms, and polar ice caps.",
-    "orbitSeconds": 68.649,
+    "orbitSeconds": 68.651,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "687 Earth days"
+    "motion": "Prograde orbit",
+    "year": "687 Earth days",
+    "discovery": "Known since ancient times; no single discoverer/date.",
+    "revolution": "687 Earth days",
+    "mass": "6.42 \u00d7 10\u00b2\u00b3 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "jupiter",
@@ -90,7 +106,7 @@ window.PLANET_DATA = [
     "color": "#c88b3a",
     "nodeRadius": 13,
     "orbitAU": 2.5,
-    "periodYears": 11.862,
+    "periodYears": 11.862615,
     "distance": "778.5 million km",
     "diameter": "139,820 km",
     "day": "9.9 hours",
@@ -99,10 +115,14 @@ window.PLANET_DATA = [
     "kidFact": "Jupiter is the largest planet \u2014 more than twice as massive as all the other planets combined.",
     "mission": "Can you spot Jupiter's giant storm? Look for the reddish oval.",
     "wow": "If Jupiter were hollow, many Earths could fit inside it.",
-    "orbitSeconds": 432.963,
+    "orbitSeconds": 432.985,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "11.9 Earth years"
+    "motion": "Prograde orbit",
+    "year": "11.86 Earth years",
+    "discovery": "Known since ancient times; no single discoverer/date.",
+    "revolution": "11.86 Earth years",
+    "mass": "1.90 \u00d7 10\u00b2\u2077 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "saturn",
@@ -111,7 +131,7 @@ window.PLANET_DATA = [
     "color": "#e4d191",
     "nodeRadius": 11,
     "orbitAU": 3.15,
-    "periodYears": 29.457,
+    "periodYears": 29.447498,
     "distance": "1.43 billion km",
     "diameter": "116,460 km",
     "day": "10.7 hours",
@@ -120,10 +140,14 @@ window.PLANET_DATA = [
     "kidFact": "Saturn has the most famous rings, made of countless pieces of ice and rock.",
     "mission": "Count the ring bands you can see. Rings are not solid \u2014 they are lots of tiny pieces!",
     "wow": "Saturn is a huge ball made mostly of hydrogen and helium.",
-    "orbitSeconds": 1075.18,
+    "orbitSeconds": 1074.834,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "29.5 Earth years"
+    "motion": "Prograde orbit",
+    "year": "29.45 Earth years",
+    "discovery": "Known since ancient times; no single discoverer/date.",
+    "revolution": "29.45 Earth years",
+    "mass": "5.68 \u00d7 10\u00b2\u2076 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "uranus",
@@ -143,8 +167,12 @@ window.PLANET_DATA = [
     "wow": "Uranus is very cold, windy, and has faint rings.",
     "orbitSeconds": 3066.615,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "84 Earth years"
+    "motion": "Prograde orbit",
+    "year": "84.02 Earth years",
+    "discovery": "William Herschel, 1781.",
+    "revolution": "84.02 Earth years",
+    "mass": "8.68 \u00d7 10\u00b2\u2075 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "neptune",
@@ -164,8 +192,12 @@ window.PLANET_DATA = [
     "wow": "Neptune has some of the fastest winds in the solar system.",
     "orbitSeconds": 6014.883,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "164.8 Earth years"
+    "motion": "Prograde orbit",
+    "year": "164.79 Earth years",
+    "discovery": "Johann Galle, 1846; predicted by Le Verrier/Adams.",
+    "revolution": "164.79 Earth years",
+    "mass": "1.02 \u00d7 10\u00b2\u2076 kg",
+    "distanceLabel": "Avg. distance from Sun"
   },
   {
     "key": "pluto",
@@ -185,7 +217,11 @@ window.PLANET_DATA = [
     "wow": "NASA's New Horizons spacecraft gave us our first close-up look at Pluto.",
     "orbitSeconds": 9049.81,
     "orbitDirection": 1,
-    "motion": "Prograde visual orbit",
-    "year": "247.9 Earth years"
+    "motion": "Prograde orbit",
+    "year": "247.94 Earth years",
+    "discovery": "Clyde Tombaugh, 1930.",
+    "revolution": "247.94 Earth years",
+    "mass": "1.31 \u00d7 10\u00b2\u00b2 kg",
+    "distanceLabel": "Avg. distance from Sun"
   }
 ];

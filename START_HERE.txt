@@ -1,1 +1,0 @@
-Unzip this folder, then double-click OPEN_ME.html. The guide starts at 1x speed. Use the round control button to cycle: pause symbol at 1x, 2x, 4x, 8x, then play icon for paused.

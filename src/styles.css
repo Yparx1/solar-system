@@ -1059,3 +1059,70 @@ body.info-open #telescopeBtn {
     line-height: 1.5 !important;
   }
 }
+
+/* v68 fixed mobile interaction reset */
+html, body {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#parallaxLayer, #c {
+  width: 100dvw !important;
+  height: 100dvh !important;
+  touch-action: none !important;
+}
+
+#c {
+  pointer-events: auto !important;
+}
+
+body.info-open #c {
+  pointer-events: auto !important;
+}
+
+#infoBackdrop {
+  background: transparent !important;
+}
+
+@media (max-width: 760px) {
+  #title {
+    pointer-events: none;
+  }
+
+  #info {
+    max-height: min(70dvh, 620px) !important;
+  }
+
+  #closeInfo {
+    min-width: 56px !important;
+    min-height: 56px !important;
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .panel {
+    backdrop-filter: none !important;
+    background: rgba(9, 11, 22, .88);
+  }
+
+  .loader-screen::after {
+    backdrop-filter: none !important;
+    background: rgba(2, 3, 10, .46);
+  }
+}
+
+
+/* v71 outside-card close behavior: keep backdrop invisible/non-blocking so planet taps still work. */
+#infoBackdrop,
+body.info-open #infoBackdrop {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

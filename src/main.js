@@ -13,9 +13,12 @@ const spinCanvas = document.getElementById('spinCanvas');
 const spinCtx = spinCanvas ? spinCanvas.getContext('2d') : null;
 
 const TWO_PI = Math.PI * 2;
-const PERF_DPR_LIMIT = window.innerWidth < 760 ? 1.15 : 1.35;
-const BG_FRAME_INTERVAL_MS = window.innerWidth < 760 ? 48 : 34;
+const PERF_DPR_LIMIT = window.innerWidth < 760 ? 1.0 : 1.5;
+const MAIN_FRAME_INTERVAL_MS = window.innerWidth < 760 ? 1000 / 30 : 1000 / 60;
+const BG_FRAME_INTERVAL_MS = window.innerWidth < 760 ? 66 : 34;
 let lastBgDrawTime = -Infinity;
+let lastMainDrawTime = -Infinity;
+let mainRafId = null;
 const EARTH_ORBIT_SECONDS = 36.5;
 
 let W = 0;
@@ -53,6 +56,11 @@ let layerParallaxY = 0;
 let lastParallaxInputTime = 0;
 const PLANET_TONES = { sun: 196, mercury: 262, venus: 294, earth: 330, mars: 349, jupiter: 392, saturn: 440, uranus: 494, neptune: 523, pluto: 587, moon: 659 };
 
+// Keep the mobile page fixed: no browser pinch zoom or scroll gestures over the canvas.
+document.addEventListener('gesturestart', event => event.preventDefault(), { passive: false });
+document.addEventListener('gesturechange', event => event.preventDefault(), { passive: false });
+document.addEventListener('gestureend', event => event.preventDefault(), { passive: false });
+
 function isMobileViewport() {
   return W < 760 || window.matchMedia('(pointer: coarse)').matches;
 }
@@ -86,20 +94,23 @@ function getPlanetVisualRadius(p, isActive = false) {
 }
 
 function getTapRadius(key, visualRadius, touchPadding = 0) {
-  const coarse = isMobileViewport();
-  if (coarse) {
-    // The Sun is intentionally strict on phones so it cannot steal Mercury/Venus/Earth taps.
-    if (key === 'sun') return Math.max(13, visualRadius * 0.72);
-    if (key === 'moon') return Math.max(18, visualRadius + 10);
-    if (key === 'saturn') return Math.max(28, visualRadius * 1.85); // includes rings
-    if (key === 'jupiter') return Math.max(28, visualRadius + 10);
-    return Math.max(25, visualRadius + 9);
+  const mobile = isMobileViewport();
+  if (mobile) {
+    // Mobile targets must be helpful but not huge. Huge targets caused one tap to
+    // select several nearby objects. The picker below chooses the nearest valid
+    // object, so these are only the maximum acceptable touch distances.
+    if (key === 'sun') return Math.max(14, Math.min(20, visualRadius * 0.82));
+    if (key === 'moon') return Math.max(16, Math.min(22, visualRadius + 10));
+    if (key === 'saturn') return Math.max(26, Math.min(40, visualRadius * 1.95));
+    if (key === 'jupiter') return Math.max(24, Math.min(34, visualRadius + 9));
+    return Math.max(22, Math.min(31, visualRadius + 8));
   }
   if (key === 'sun') return Math.max(20, visualRadius * 1.05);
   if (key === 'moon') return Math.max(13, visualRadius + 3);
   if (key === 'saturn') return Math.max(22, visualRadius * 1.75);
   return Math.max(18, visualRadius + touchPadding);
 }
+
 
 const J2000_EPOCH_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 const EARTH_PERIOD_DAYS = 365.256;
@@ -224,7 +235,7 @@ async function init() {
 
   updateSpeedButton();
 
-  requestAnimationFrame(loop);
+  startMainLoop();
   setTimeout(() => {
     document.getElementById('loader')?.classList.add('hidden');
     introReady = true;
@@ -628,7 +639,36 @@ function getPlanetAngle(p) {
   return baseAngle + direction * (simulationSeconds / orbitSeconds) * TWO_PI;
 }
 
+function startMainLoop() {
+  if (mainRafId !== null || document.hidden || document.body.classList.contains('telescope-open')) return;
+  lastFrameTime = null;
+  lastMainDrawTime = -Infinity;
+  mainRafId = requestAnimationFrame(loop);
+}
+
+function stopMainLoop() {
+  if (mainRafId !== null) {
+    cancelAnimationFrame(mainRafId);
+    mainRafId = null;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopMainLoop();
+  } else if (!document.body.classList.contains('telescope-open')) {
+    startMainLoop();
+  }
+});
+
 function loop(now) {
+  mainRafId = null;
+  if (document.hidden || document.body.classList.contains('telescope-open')) return;
+  if (now - lastMainDrawTime < MAIN_FRAME_INTERVAL_MS) {
+    mainRafId = requestAnimationFrame(loop);
+    return;
+  }
+  lastMainDrawTime = now;
   if (lastFrameTime === null) lastFrameTime = now;
   const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
   lastFrameTime = now;
@@ -638,8 +678,13 @@ function loop(now) {
   const introProgress = prefersReduced ? 1 : easeOutCubic(introProgressRaw);
   const introActive = introStartTime !== null && introProgressRaw < 1;
 
-  layerParallaxX += (layerParallaxTargetX - layerParallaxX) * 0.055;
-  layerParallaxY += (layerParallaxTargetY - layerParallaxY) * 0.055;
+  if (Math.abs(layerParallaxTargetX - layerParallaxX) > 0.03 || Math.abs(layerParallaxTargetY - layerParallaxY) > 0.03) {
+    layerParallaxX += (layerParallaxTargetX - layerParallaxX) * 0.055;
+    layerParallaxY += (layerParallaxTargetY - layerParallaxY) * 0.055;
+  } else {
+    layerParallaxX = layerParallaxTargetX;
+    layerParallaxY = layerParallaxTargetY;
+  }
 
   // Freeze the simulation clock while the loader and intro twirl are running.
   // This prevents the planets from drifting under the entrance animation and avoids the end-of-twirl snap.
@@ -693,7 +738,7 @@ function loop(now) {
   }
 
   drawSpinPreview(now);
-  requestAnimationFrame(loop);
+  mainRafId = requestAnimationFrame(loop);
 }
 
 
@@ -1130,31 +1175,42 @@ function pickPlanetFromList(clientX, clientY, list = positions, touchPadding = 0
   const candidates = [];
 
   for (const pos of list) {
-    const visualR = pos.visualR || pos.r;
+    const visualR = pos.visualR || pos.r || 1;
     const hitRadius = pos.r || getTapRadius(pos.key, visualR, touchPadding);
     const distance = Math.hypot(clientX - pos.x, clientY - pos.y);
     if (distance > hitRadius) continue;
 
-    // Lower score wins. Use real distance more than percentage, because percentage
-    // favored big objects and caused wrong selections on mobile.
-    let score = distance;
+    // Mobile selection is based on the visible object center, not the largest
+    // invisible hit zone. This prevents a tap near Jupiter or Mercury from being
+    // stolen by the Sun or another large nearby planet.
+    let score = distance / Math.max(visualR, 7);
 
     if (coarse) {
-      if (pos.key === 'sun') score += 90;       // Sun should only win if tapped directly.
-      if (pos.key === 'saturn') score += 4;     // ring area counts, but nearby centers still win.
-      if (pos.key === 'moon') score -= 5;       // moon stays clickable near its tiny disk.
-      if (pos.key === 'earth') score -= 2;
+      if (pos.key === 'sun') score += 2.25;
+      if (pos.key === 'saturn') score += distance > visualR * 1.1 ? 0.22 : 0;
+      if (pos.key === 'moon') score -= 0.15;
+      if (pos.key === 'earth') score -= 0.05;
     } else {
-      if (pos.key === 'moon') score -= 2;
+      if (pos.key === 'moon') score -= 0.08;
     }
 
-    candidates.push({ key: pos.key, score, distance, hitRadius });
+    candidates.push({ key: pos.key, score, distance, visualR, hitRadius });
   }
 
   if (!candidates.length) return null;
+
+  // If any real planet/moon is under the finger, do not let the Sun win unless
+  // the tap was directly on the Sun with no other valid target.
+  if (coarse && candidates.some(c => c.key !== 'sun')) {
+    for (let i = candidates.length - 1; i >= 0; i -= 1) {
+      if (candidates[i].key === 'sun') candidates.splice(i, 1);
+    }
+  }
+
   candidates.sort((a, b) => a.score - b.score || a.distance - b.distance);
   return getPlanetByKey(candidates[0].key);
 }
+
 
 function pickPlanet(clientX, clientY, touchPadding = 0) {
   return pickPlanetFromList(clientX, clientY, positions, touchPadding);
@@ -1173,11 +1229,6 @@ function openOrCloseFromPoint(clientX, clientY, touchPadding = 0) {
 
 canvas.addEventListener('mousemove', event => {
   updateLayerParallax(event.clientX, event.clientY);
-  if (info.classList.contains('visible')) {
-    hovered = null;
-    canvas.style.cursor = 'default';
-    return;
-  }
   const planet = pickPlanet(event.clientX, event.clientY);
   hovered = planet?.key || null;
   canvas.style.cursor = hovered ? 'pointer' : 'default';
@@ -1189,60 +1240,58 @@ canvas.addEventListener('mouseleave', () => {
   canvas.style.cursor = 'default';
 });
 
-let activePointerId = null;
-let pointerStartX = 0;
-let pointerStartY = 0;
-let pointerMoved = false;
-let pointerStartCandidate = null;
-let lastCanvasOpenTime = 0;
+let lastCanvasTapTime = 0;
+let lastTouchEndTime = 0;
 
-canvas.addEventListener('pointerdown', event => {
+function handleCanvasTap(clientX, clientY, isTouch = false) {
   if (document.body.classList.contains('telescope-open')) return;
-  if (info.classList.contains('visible')) return;
-  activePointerId = event.pointerId;
-  pointerStartX = event.clientX;
-  pointerStartY = event.clientY;
-  pointerMoved = false;
+  const now = performance.now();
+  if (now - lastCanvasTapTime < 180) return;
 
-  // Snapshot the intended target at touch start. This prevents moving planets from
-  // changing the target before touchend on phones.
-  const snapshot = positions.map(pos => ({ ...pos }));
-  pointerStartCandidate = pickPlanetFromList(pointerStartX, pointerStartY, snapshot, event.pointerType === 'touch' ? 2 : 0);
-  updateLayerParallax(event.clientX, event.clientY);
-  if (event.pointerType === 'touch') event.preventDefault();
-}, { passive: false });
+  const planet = pickPlanet(clientX, clientY, isTouch ? 0 : 0);
 
-canvas.addEventListener('pointermove', event => {
-  updateLayerParallax(event.clientX, event.clientY);
-  if (activePointerId !== event.pointerId) return;
-  const moveLimit = event.pointerType === 'touch' ? 14 : 7;
-  if (Math.hypot(event.clientX - pointerStartX, event.clientY - pointerStartY) > moveLimit) {
-    pointerMoved = true;
+  if (info.classList.contains('visible')) {
+    // New behavior: while the info card is open, tapping another visible planet
+    // switches the card directly to that planet. Tapping empty space still closes.
+    if (planet) {
+      showPlanet(planet, true);
+    } else {
+      closeInfoPanel();
+    }
+    lastCanvasTapTime = now;
+    return;
   }
-});
 
-canvas.addEventListener('pointerup', event => {
-  if (document.body.classList.contains('telescope-open')) return;
-  if (activePointerId !== event.pointerId) return;
-  resetLayerParallax();
-  activePointerId = null;
-
-  if (event.pointerType === 'touch') event.preventDefault();
-  if (pointerMoved) return;
-  if (performance.now() - lastCanvasOpenTime < 260) return;
-
-  const planet = pointerStartCandidate || pickPlanet(event.clientX, event.clientY, event.pointerType === 'touch' ? 2 : 0);
   if (openFromPlanet(planet)) {
-    lastCanvasOpenTime = performance.now();
+    lastCanvasTapTime = now;
   }
+}
+
+canvas.addEventListener('touchend', event => {
+  if (!event.changedTouches || !event.changedTouches.length) return;
+  event.preventDefault();
+  const touch = event.changedTouches[0];
+  lastTouchEndTime = performance.now();
+  handleCanvasTap(touch.clientX, touch.clientY, true);
 }, { passive: false });
 
-canvas.addEventListener('pointercancel', () => {
-  activePointerId = null;
-  pointerStartCandidate = null;
-  pointerMoved = false;
-  resetLayerParallax();
+canvas.addEventListener('click', event => {
+  // iOS/Android often fires a synthetic click after touchend. Ignore it.
+  if (performance.now() - lastTouchEndTime < 650) return;
+  handleCanvasTap(event.clientX, event.clientY, false);
 });
+
+canvas.addEventListener('touchmove', event => {
+  // Keep the page fixed and stop accidental browser panning/zooming over the app.
+  event.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchstart', event => {
+  if (event.touches && event.touches[0]) {
+    updateLayerParallax(event.touches[0].clientX, event.touches[0].clientY);
+  }
+}, { passive: true });
+
 
 const closeInfoButton = document.getElementById('closeInfo');
 function closeInfoPanel(event) {
@@ -1254,7 +1303,24 @@ function closeInfoPanel(event) {
 }
 
 closeInfoButton.addEventListener('click', closeInfoPanel);
-closeInfoButton.addEventListener('touchend', closeInfoPanel, { passive: false });
+
+// Keep the information card open only when the user is interacting inside it.
+// Canvas taps are handled by handleCanvasTap(): planet taps switch the panel,
+// and empty-space taps close it. This listener covers every other outside area.
+info.addEventListener('click', event => event.stopPropagation());
+info.addEventListener('touchend', event => event.stopPropagation(), { passive: true });
+
+document.addEventListener('click', event => {
+  if (!info.classList.contains('visible')) return;
+  if (document.body.classList.contains('telescope-open')) return;
+  if (info.contains(event.target)) return;
+
+  // Let the canvas decide whether the user tapped another planet or empty space.
+  if (event.target === canvas || event.target === parallaxCanvas) return;
+
+  closeInfoPanel(event);
+}, true);
+
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeInfoPanel(event);
 });
@@ -1292,9 +1358,12 @@ function toggleTelescopeView(forceOpen) {
   if (opening) {
     info.classList.remove('visible');
     resetLayerParallax();
+    stopMainLoop();
     if (telescopeFrame && !telescopeFrame.getAttribute('src')) telescopeFrame.setAttribute('src', 'milky_way_parallax.html');
   } else {
     resetLayerParallax();
+    if (telescopeFrame) telescopeFrame.removeAttribute('src');
+    startMainLoop();
   }
   playSwoosh(opening);
 }

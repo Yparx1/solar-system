@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:rgba(255,255,255,.9);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;background:#00000d}
+#hud{position:fixed;top:max(24px,env(safe-area-inset-top));left:max(24px,env(safe-area-inset-left));z-index:15;font:800 14px/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:3.6px;text-transform:uppercase;color:rgba(232,242,255,.82);text-shadow:0 8px 24px rgba(0,0,0,.72);pointer-events:none;user-select:none}
+#sagPanel{position:fixed;right:24px;top:50%;z-index:20;width:min(324px,calc(100vw - 32px));max-height:calc(100svh - 64px);overflow:auto;padding:18px;border-radius:24px;background:rgba(9,11,22,.82);border:1px solid rgba(255,255,255,.13);box-shadow:0 18px 70px rgba(0,0,0,.45);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transform:translateY(-50%) translateX(22px);transition:opacity .24s ease,transform .24s ease}
+#sagPanel.visible{opacity:1;pointer-events:auto;transform:translateY(-50%) translateX(0)}
+#sagPanel img{display:block;width:100%;aspect-ratio:4/5;max-height:min(46svh,360px);object-fit:contain;object-position:center;border-radius:18px;margin:0 auto 14px;background:radial-gradient(circle at 50% 50%, rgba(28,20,18,.88), rgba(6,7,12,.96));padding:10px}
+#sagPanel h2{margin:0 0 4px;font-size:24px;line-height:1.08;letter-spacing:-.02em}
+#sagPanel .type{color:rgba(255,255,255,.56);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+#sagPanel p{margin:0 0 12px;color:rgba(255,255,255,.76);font-size:14px;line-height:1.55}
+#sagPanel .row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-top:1px solid rgba(255,255,255,.075);font-size:12px}
+#sagPanel .row span{color:rgba(255,255,255,.56)}
+#sagPanel .row b{text-align:right;color:rgba(255,255,255,.82);font-weight:700}
+#sagClose{position:absolute;right:12px;top:12px;width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.42);color:#fff;font-size:25px;font-weight:800;line-height:1;cursor:pointer}
+@media(max-width:760px){#hud{top:18px;left:18px;font-size:12px;letter-spacing:3px}#sagPanel{top:auto;left:10px;right:10px;bottom:72px;width:auto;max-height:min(62svh,520px);padding:14px;border-radius:20px;transform:translateY(28px);backdrop-filter:none;background:rgba(9,11,22,.94)}#sagPanel.visible{transform:translateY(0)}#sagPanel img{aspect-ratio:4/5;max-height:min(34svh,240px);padding:8px}#sagClose{width:48px;height:48px;font-size:28px}}
+</style>
+</head>
+<body>
+<canvas id="canvas" aria-label="Milky Way galaxy view"></canvas>
+<div id="hud">MILKY WAY</div>
+<aside id="sagPanel" aria-live="polite" aria-label="Sagittarius A star information panel">
+  <button id="sagClose" type="button" aria-label="Close Sagittarius A information">×</button>
+  <img src="assets/sagittarius-a.png" alt="Sagittarius A star image">
+  <h2>Sagittarius A*</h2>
+  <div class="type">Supermassive black hole</div>
+  <p>This is the giant black hole at the center of the Milky Way. We cannot see the black hole itself, but we can see the hot gas glowing around it.</p>
+  <p>Sagittarius A* is extremely massive. Its gravity is so strong that nearby stars move very fast around it.</p>
+  <p><b>Fun fact:</b> The first image of Sagittarius A* was shared in 2022. It helped scientists study the center of our galaxy.</p>
+  <div class="row"><span>Location</span><b>Galactic Center</b></div>
+  <div class="row"><span>Mass</span><b>About 4 million Suns</b></div>
+  <div class="row"><span>Distance from Earth</span><b>About 26,000 light-years</b></div>
+</aside>
+<script>
+const cvs=document.getElementById('canvas');
+const ctx=cvs.getContext('2d',{alpha:false});
+const sagPanel=document.getElementById('sagPanel');
+const sagClose=document.getElementById('sagClose');
+const isMobile=()=>innerWidth<760 || matchMedia('(pointer: coarse)').matches;
+if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this;};}
+let W=0,H=0,cx=0,cy=0,gR=1,dpr=1;
+let mx=0,my=0,ox=0,oy=0,t=0,rafId=null,lastFrame=0;
+let bgStars=[],staticCanvas=null,staticCtx=null,shoots=[];
+let sagHot=false,audioCtx=null;
+const LAYER_PF=[0.008,0.04,0.1];
+function rand(a,b){return a+Math.random()*(b-a)}
+function playMilkyTone(kind='tap'){try{if(!audioCtx)audioCtx=new (AudioContext||webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const n=audioCtx.currentTime;const o=audioCtx.createOscillator();const g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(kind==='close'?260:kind==='open'?520:380,n);o.frequency.exponentialRampToValueAtTime(kind==='close'?180:kind==='open'?760:480,n+.18);g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.035,n+.02);g.gain.exponentialRampToValueAtTime(.0001,n+.22);o.connect(g).connect(audioCtx.destination);o.start(n);o.stop(n+.24);}catch(e){}}
+function ssScreen(){const r=gR*0.58;const th=2.05;return{x:cx+Math.cos(th)*r+ox*0.05,y:cy+Math.sin(th)*r+oy*0.05};}
+function sagScreen(){return{x:cx+ox*0.03,y:cy+oy*0.03};}
+function isSolarSystemHit(x,y){const s=ssScreen();return Math.hypot(x-s.x,y-s.y)<50;}
+function returnToSolarSystem(){playMilkyTone('close');parent.postMessage({type:'solar-system-guide-close-telescope'},'*');}
+function setup(){
+  W=innerWidth;H=innerHeight;dpr=Math.min(Math.max(1,devicePixelRatio||1),isMobile()?1.0:1.5);
+  cvs.width=Math.floor(W*dpr);cvs.height=Math.floor(H*dpr);cvs.style.width=W+'px';cvs.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);
+  cx=W/2;cy=H/2;gR=Math.min(W,H)*0.42;
+  const starCount=isMobile()?240:520;
+  bgStars=Array.from({length:starCount},()=>{const big=Math.random()>0.965;return{x:Math.random()*W,y:Math.random()*H,size:big?rand(1.05,1.8):rand(.22,.82),alpha:rand(.16,.70),tw:rand(0,Math.PI*2),ts:rand(.018,.052),hue:Math.random()>.92?(Math.random()>.5?215:33):-1,layer:Math.floor(Math.random()*3)}});
+  buildStaticGalaxy();
+}
+function buildStaticGalaxy(){
+  staticCanvas=document.createElement('canvas');staticCanvas.width=Math.floor(W*dpr);staticCanvas.height=Math.floor(H*dpr);staticCtx=staticCanvas.getContext('2d');staticCtx.setTransform(dpr,0,0,dpr,0,0);
+  const c=staticCtx;c.clearRect(0,0,W,H);
+  const nb=c.createRadialGradient(cx*.75,cy*.88,0,cx*.75,cy*.88,W*.5);nb.addColorStop(0,'rgba(10,5,32,.18)');nb.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=nb;c.fillRect(0,0,W,H);
+  c.save();c.translate(cx,cy);
+  const halo=c.createRadialGradient(0,0,gR*.28,0,0,gR*1.2);halo.addColorStop(0,'rgba(40,26,90,.08)');halo.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(0,0,gR*1.2,0,Math.PI*2);c.fillStyle=halo;c.fill();
+  const pts=[];const armCount=isMobile()?120:280;const ARM_H=[205,197,213,202];
+  for(let arm=0;arm<4;arm++){const base=arm/4*Math.PI*2,h=ARM_H[arm];for(let i=0;i<armCount;i++){const r=.08+Math.pow(Math.random(),.55)*.88;const rn=(r-.08)/.88;const wind=rn*Math.PI*3;const spr=(.07+rn*.13)*(Math.random()<.5?1:-1)*Math.random();const th=base+wind+spr;const inner=Math.max(0,1-rn*2.5);pts.push({gx:Math.cos(th)*r,gy:Math.sin(th)*r,size:rand(.38,1.45)*(0.55+0.45*(1-rn)),h:inner>0?h*(1-inner)+44*inner:h+rand(-11,11),s:58*(1-inner*.55)+rand(-7,7),l:Math.min(95,70+rand(-11,11)+inner*22),a:rand(.24,.68)*(0.48+0.55*(1-rn*.6))});}}
+  const orionCount=isMobile()?45:100;for(let i=0;i<orionCount;i++){const r=.28+Math.random()*.46;const th=2.0+(r-.28)*3.1+rand(-.07,.07);pts.push({gx:Math.cos(th)*r,gy:Math.sin(th)*r,size:rand(.5,1.4),h:rand(207,235),s:rand(62,84),l:rand(72,92),a:rand(.36,.72)});}
+  const barCount=isMobile()?80:170;const BA=.7;for(let i=0;i<barCount;i++){const al=rand(-.16,.16);const ac=rand(-.044,.044)*(1-Math.abs(al)/.16+.14);const bx=al*Math.cos(BA)-ac*Math.sin(BA);const by=al*Math.sin(BA)+ac*Math.cos(BA);const dist=Math.sqrt(bx*bx+by*by);pts.push({gx:bx,gy:by,size:Math.max(.1,rand(.35,1.55)*Math.max(0,1-dist*5)),h:rand(42,57),s:rand(16,42),l:rand(76,96),a:rand(.38,.76)});}
+  c.beginPath();for(const p of pts){c.moveTo(p.gx*gR+p.size,p.gy*gR);c.arc(p.gx*gR,p.gy*gR,p.size,0,Math.PI*2);}c.fillStyle='rgba(190,220,255,.12)';c.fill();
+  // color pass for richer arm colors, lower count due static cache
+  for(const p of pts){c.beginPath();c.arc(p.gx*gR,p.gy*gR,p.size,0,Math.PI*2);c.fillStyle=`hsla(${p.h},${p.s}%,${p.l}%,${p.a})`;c.fill();}
+  const cO=c.createRadialGradient(0,0,0,0,0,gR*.33);cO.addColorStop(0,'rgba(255,233,150,.66)');cO.addColorStop(.28,'rgba(245,180,68,.31)');cO.addColorStop(.65,'rgba(170,86,20,.07)');cO.addColorStop(1,'rgba(0,0,0,0)');c.beginPath();c.arc(0,0,gR*.33,0,Math.PI*2);c.fillStyle=cO;c.fill();
+  const cB=c.createRadialGradient(0,0,0,0,0,gR*.09);cB.addColorStop(0,'rgba(255,255,222,.96)');cB.addColorStop(.5,'rgba(255,240,152,.64)');cB.addColorStop(1,'rgba(255,192,60,0)');c.beginPath();c.arc(0,0,gR*.09,0,Math.PI*2);c.fillStyle=cB;c.fill();
+  c.restore();
+}
+function drawStars(layer){ctx.beginPath();let fillWhite=true;for(const s of bgStars){if(s.layer!==layer||s.hue>=0)continue;s.tw+=s.ts;const a=s.alpha*(.68+.32*Math.sin(s.tw));const pf=LAYER_PF[layer];const sx=((s.x+ox*pf)%W+W)%W;const sy=((s.y+oy*pf)%H+H)%H;ctx.moveTo(sx+s.size,sy);ctx.arc(sx,sy,s.size,0,Math.PI*2);}ctx.fillStyle='rgba(255,255,255,.58)';ctx.fill();for(const s of bgStars){if(s.layer!==layer||s.hue<0)continue;s.tw+=s.ts;const a=s.alpha*(.68+.32*Math.sin(s.tw));const pf=LAYER_PF[layer];const sx=((s.x+ox*pf)%W+W)%W;const sy=((s.y+oy*pf)%H+H)%H;ctx.beginPath();ctx.arc(sx,sy,s.size,0,Math.PI*2);ctx.fillStyle=`hsla(${s.hue},80%,92%,${a})`;ctx.fill();}}
+function drawLiveCenter(){const sg=sagScreen();const pulse=.5+.5*Math.sin(t*2.5);ctx.beginPath();ctx.arc(sg.x,sg.y,10+pulse*9,0,Math.PI*2);ctx.strokeStyle=`rgba(255,226,130,${.24*(1-pulse)+.08})`;ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(sg.x,sg.y,8,0,Math.PI*2);ctx.strokeStyle=sagHot?'rgba(255,255,230,.95)':'rgba(255,226,130,.68)';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.arc(sg.x,sg.y,gR*.024,0,Math.PI*2);ctx.fillStyle='rgba(255,248,192,.72)';ctx.fill();ctx.textAlign='center';ctx.font='bold 9px system-ui,sans-serif';ctx.fillStyle=sagHot?'rgba(255,245,180,.86)':'rgba(255,226,130,.52)';ctx.fillText('TAP SAGITTARIUS A*',sg.x,sg.y+gR*.13+13);}
+function drawSS(){const {x:sx,y:sy}=ssScreen();const p1=.5+.5*Math.sin(t*2.8),p2=.5+.5*Math.sin(t*2.8+Math.PI);ctx.beginPath();ctx.arc(sx,sy,9+p1*10,0,Math.PI*2);ctx.strokeStyle=`rgba(80,192,255,${(1-p1)*.44})`;ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(sx,sy,7,0,Math.PI*2);ctx.strokeStyle='rgba(155,222,255,.9)';ctx.lineWidth=1.6;ctx.stroke();ctx.beginPath();ctx.arc(sx,sy,3,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();const goRight=sx<W*.62;const lx=goRight?sx+16:sx-142;const ly=sy-18;ctx.beginPath();ctx.moveTo(sx+(goRight?7:-7),sy-3);ctx.lineTo(sx+(goRight?16:-16),ly+8);ctx.strokeStyle='rgba(120,200,255,.24)';ctx.lineWidth=.7;ctx.stroke();ctx.save();const cardW=140,cardH=44,cardX=lx-2,cardY=ly-6;ctx.fillStyle='rgba(8,14,28,.50)';ctx.beginPath();ctx.roundRect(cardX,cardY,cardW,cardH,10);ctx.fill();ctx.strokeStyle='rgba(146,205,255,.06)';ctx.stroke();ctx.textAlign='left';ctx.font='700 7px system-ui,sans-serif';ctx.fillStyle='rgba(190,215,240,.48)';ctx.fillText('YOU ARE HERE',cardX+10,cardY+12);ctx.font='700 14px system-ui,sans-serif';ctx.fillStyle='rgba(245,249,255,.92)';ctx.fillText('Solar System',cardX+10,cardY+28);ctx.font='600 9px system-ui,sans-serif';ctx.fillStyle='rgba(176,221,255,.68)';ctx.fillText('Milky Way',cardX+10,cardY+40);ctx.restore();}
+function spawnShoot(){if(shoots.length<2&&Math.random()<(isMobile()?.006:.012))shoots.push({x:rand(0,W),y:rand(0,H*.45),ang:rand(.3,.8),spd:rand(8,13),len:rand(35,75),life:1,hue:Math.random()>.5?210:35});}
+function drawShoots(){spawnShoot();shoots=shoots.filter(s=>s.life>0);for(const s of shoots){s.x+=Math.cos(s.ang)*s.spd;s.y+=Math.sin(s.ang)*s.spd;s.life-=.04;const tx=s.x-Math.cos(s.ang)*s.len,ty=s.y-Math.sin(s.ang)*s.len;const gr=ctx.createLinearGradient(tx,ty,s.x,s.y);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(1,s.hue===210?`rgba(180,225,255,${s.life})`:`rgba(255,235,160,${s.life})`);ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(s.x,s.y);ctx.strokeStyle=gr;ctx.lineWidth=1.2;ctx.stroke();}}
+function frame(now){rafId=null;if(document.hidden)return;const frameMs=isMobile()?1000/30:1000/60;if(now-lastFrame<frameMs){rafId=requestAnimationFrame(frame);return;}lastFrame=now;if(Math.abs(mx-ox)>0.04||Math.abs(my-oy)>0.04){ox+=(mx-ox)*.055;oy+=(my-oy)*.055;}else{ox=mx;oy=my;}ctx.fillStyle='#00000D';ctx.fillRect(0,0,W,H);drawStars(0);ctx.drawImage(staticCanvas,ox*.03,oy*.03,W,H);drawLiveCenter();drawSS();drawStars(1);drawShoots();drawStars(2);t+=frameMs/1000;rafId=requestAnimationFrame(frame);}
+function start(){if(rafId===null&&!document.hidden)rafId=requestAnimationFrame(frame)}
+function stop(){if(rafId!==null){cancelAnimationFrame(rafId);rafId=null}}
+addEventListener('mousemove',e=>{mx=(e.clientX-W/2)*.95;my=(e.clientY-H/2)*.95;const sg=sagScreen();sagHot=Math.hypot(e.clientX-sg.x,e.clientY-sg.y)<34;document.body.style.cursor=(sagHot||isSolarSystemHit(e.clientX,e.clientY))?'pointer':'default';});
+addEventListener('click',e=>{if(e.target&&e.target.closest&&e.target.closest('#sagPanel'))return;if(isSolarSystemHit(e.clientX,e.clientY)){returnToSolarSystem();return;}const sg=sagScreen();if(Math.hypot(e.clientX-sg.x,e.clientY-sg.y)<42){playMilkyTone('open');sagPanel.classList.add('visible');}});
+addEventListener('touchmove',e=>{e.preventDefault();if(!e.touches[0])return;mx=(e.touches[0].clientX-W/2)*.95;my=(e.touches[0].clientY-H/2)*.95;},{passive:false});
+addEventListener('touchend',e=>{const touch=e.changedTouches&&e.changedTouches[0];if(!touch)return;if(isSolarSystemHit(touch.clientX,touch.clientY)){returnToSolarSystem();return;}const sg=sagScreen();if(Math.hypot(touch.clientX-sg.x,touch.clientY-sg.y)<48){playMilkyTone('open');sagPanel.classList.add('visible');}},{passive:true});
+sagClose.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();playMilkyTone('close');sagPanel.classList.remove('visible');});
+addEventListener('resize',()=>{setup();lastFrame=0;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else start();});
+setup();start();
+</script>
+</body>
+</html>

@@ -256,12 +256,14 @@ button {
 
 .close-mini,
 #info .close {
-  position: absolute;
-  top: 10px;
-  right: 12px;
+  position: sticky;
+  top: 0;
+  right: 0;
   z-index: 60;
-  width: 44px;
-  height: 44px;
+  float: right;
+  width: 48px;
+  height: 48px;
+  margin: -6px -6px 4px 8px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, .22);
@@ -653,11 +655,11 @@ body.telescope-open #credit {
 
   #info {
     top: auto;
-    right: 10px;
-    bottom: calc(72px + env(safe-area-inset-bottom));
-    left: 10px;
+    right: 8px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 8px;
     width: auto;
-    max-height: min(62svh, 520px);
+    max-height: min(64svh, 520px);
     padding: 14px;
     border-radius: 20px;
     transform: translateY(28px);
@@ -669,11 +671,13 @@ body.telescope-open #credit {
   }
 
   #info .close {
-    top: 8px;
-    right: 8px;
-    width: 48px;
-    height: 48px;
-    font-size: 28px;
+    top: 0;
+    width: 64px;
+    height: 64px;
+    margin: -8px -8px 4px 8px;
+    font-size: 34px;
+    background: rgba(16, 20, 34, .92);
+    border-color: rgba(255,255,255,.34);
   }
 
   #infoImage {
@@ -976,5 +980,82 @@ body.telescope-open #info {
     width: 44px !important;
     height: 44px !important;
     font-size: 20px !important;
+  }
+}
+
+/* v67 mobile usability hardening */
+#infoBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.02);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+  touch-action: none;
+}
+
+body.info-open #infoBackdrop {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.info-open #c {
+  pointer-events: none;
+}
+
+body.info-open #planetDock,
+body.info-open #planetDockToggle,
+body.info-open #ui,
+body.info-open #telescopeBtn {
+  pointer-events: auto;
+}
+
+#info {
+  z-index: 30;
+}
+
+@media (max-width: 760px) {
+  canvas {
+    touch-action: none;
+  }
+
+  #info {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+    max-height: min(58svh, 470px) !important;
+    padding: 12px !important;
+    border-radius: 20px !important;
+  }
+
+  #info .close {
+    position: sticky !important;
+    top: 0 !important;
+    width: 68px !important;
+    height: 68px !important;
+    min-width: 68px !important;
+    min-height: 68px !important;
+    margin: -6px -6px 2px 8px !important;
+    font-size: 38px !important;
+    z-index: 80 !important;
+  }
+
+  #infoImage {
+    height: min(30svh, 176px) !important;
+  }
+
+  #info h2 {
+    font-size: 21px !important;
+  }
+
+  .fact {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
   }
 }

@@ -3,6 +3,7 @@ const bgCtx = bgCanvas.getContext('2d');
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const info = document.getElementById('info');
+const infoBackdrop = document.getElementById('infoBackdrop');
 const dock = document.getElementById('planetDock');
 const telescopeBtn = document.getElementById('telescopeBtn');
 const telescopeOverlay = document.getElementById('telescopeOverlay');
@@ -51,6 +52,54 @@ let layerParallaxX = 0;
 let layerParallaxY = 0;
 let lastParallaxInputTime = 0;
 const PLANET_TONES = { sun: 196, mercury: 262, venus: 294, earth: 330, mars: 349, jupiter: 392, saturn: 440, uranus: 494, neptune: 523, pluto: 587, moon: 659 };
+
+function isMobileViewport() {
+  return W < 760 || window.matchMedia('(pointer: coarse)').matches;
+}
+
+function getPlanetVisualRadius(p, isActive = false) {
+  // Mobile readability: make planets visible, but do NOT let the selected glow change hit logic.
+  const mobile = isMobileViewport();
+  const mobileBoost = mobile ? 1.34 : 1;
+  const activeScale = mobile ? 1.03 : 1.18;
+  let r = p.nodeRadius * mobileBoost * (isActive ? activeScale : 1);
+
+  if (mobile) {
+    const mobileMin = {
+      mercury: 7.2,
+      venus: 8.0,
+      earth: 8.2,
+      mars: 7.4,
+      jupiter: 14.2,
+      saturn: 11.8,
+      uranus: 9.2,
+      neptune: 8.8,
+      pluto: 7.0
+    };
+    r = Math.max(r, mobileMin[p.key] || 7.4);
+  }
+
+  if (p.key === 'jupiter') r *= mobile ? 1.02 : 1.04;
+  if (p.key === 'saturn' && mobile) r *= 0.96;
+  if (p.key === 'pluto') r *= mobile ? 1.08 : 0.92;
+  return r;
+}
+
+function getTapRadius(key, visualRadius, touchPadding = 0) {
+  const coarse = isMobileViewport();
+  if (coarse) {
+    // The Sun is intentionally strict on phones so it cannot steal Mercury/Venus/Earth taps.
+    if (key === 'sun') return Math.max(13, visualRadius * 0.72);
+    if (key === 'moon') return Math.max(18, visualRadius + 10);
+    if (key === 'saturn') return Math.max(28, visualRadius * 1.85); // includes rings
+    if (key === 'jupiter') return Math.max(28, visualRadius + 10);
+    return Math.max(25, visualRadius + 9);
+  }
+  if (key === 'sun') return Math.max(20, visualRadius * 1.05);
+  if (key === 'moon') return Math.max(13, visualRadius + 3);
+  if (key === 'saturn') return Math.max(22, visualRadius * 1.75);
+  return Math.max(18, visualRadius + touchPadding);
+}
 
 const J2000_EPOCH_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 const EARTH_PERIOD_DAYS = 365.256;
@@ -277,42 +326,49 @@ function drawStars() {
 
 function drawSelectedObjectGlow(x, y, r, color = '#ffd36f', intensity = 1) {
   ctx.save();
+  const mobile = isMobileViewport();
+  const outerScale = mobile ? 1.55 : 4.2;
+  const softScale = mobile ? 1.18 : 2.15;
+  const ringScale = mobile ? 1.12 : 1.55;
+  const glowIntensity = mobile ? intensity * 0.46 : intensity;
 
-  const outer = ctx.createRadialGradient(x, y, r * 0.2, x, y, r * 4.2);
-  outer.addColorStop(0, `${color}42`);
-  outer.addColorStop(0.42, `${color}20`);
+  const outer = ctx.createRadialGradient(x, y, r * 0.2, x, y, r * outerScale);
+  outer.addColorStop(0, `${color}${mobile ? '16' : '42'}`);
+  outer.addColorStop(0.5, `${color}${mobile ? '06' : '20'}`);
   outer.addColorStop(1, `${color}00`);
   ctx.beginPath();
-  ctx.arc(x, y, r * 4.2, 0, TWO_PI);
+  ctx.arc(x, y, r * outerScale, 0, TWO_PI);
   ctx.fillStyle = outer;
   ctx.fill();
 
-  const softWhite = ctx.createRadialGradient(x, y, r * 0.75, x, y, r * 2.15);
-  softWhite.addColorStop(0, `rgba(255,255,255,${0.18 * intensity})`);
+  const softWhite = ctx.createRadialGradient(x, y, r * 0.75, x, y, r * softScale);
+  softWhite.addColorStop(0, `rgba(255,255,255,${0.15 * glowIntensity})`);
   softWhite.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.beginPath();
-  ctx.arc(x, y, r * 2.15, 0, TWO_PI);
+  ctx.arc(x, y, r * softScale, 0, TWO_PI);
   ctx.fillStyle = softWhite;
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(x, y, r * 1.55, 0, TWO_PI);
-  ctx.strokeStyle = `rgba(255,255,255,${0.34 * intensity})`;
-  ctx.lineWidth = Math.max(1, r * 0.08);
+  ctx.arc(x, y, r * ringScale, 0, TWO_PI);
+  ctx.strokeStyle = `rgba(255,255,255,${0.28 * glowIntensity})`;
+  ctx.lineWidth = Math.max(1, r * 0.055);
   ctx.stroke();
 
   ctx.restore();
 }
 
 function drawSun(isActive = false) {
-  const r = Math.max(22, maxOrbitRadius * 0.105);
+  const mobile = isMobileViewport();
+  const r = mobile ? Math.max(18, Math.min(28, maxOrbitRadius * 0.075)) : Math.max(22, maxOrbitRadius * 0.105);
+  const sunGlowScale = mobile ? 1.45 : 2.8;
 
-  const outerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.8);
-  outerGlow.addColorStop(0, 'rgba(255,214,112,.24)');
-  outerGlow.addColorStop(0.45, 'rgba(255,160,40,.10)');
+  const outerGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * sunGlowScale);
+  outerGlow.addColorStop(0, mobile ? 'rgba(255,214,112,.16)' : 'rgba(255,214,112,.24)');
+  outerGlow.addColorStop(0.45, mobile ? 'rgba(255,160,40,.055)' : 'rgba(255,160,40,.10)');
   outerGlow.addColorStop(1, 'rgba(255,120,0,0)');
   ctx.beginPath();
-  ctx.arc(cx, cy, r * 2.8, 0, TWO_PI);
+  ctx.arc(cx, cy, r * sunGlowScale, 0, TWO_PI);
   ctx.fillStyle = outerGlow;
   ctx.fill();
 
@@ -336,10 +392,10 @@ function drawSun(isActive = false) {
   ctx.restore();
 
   if (isActive) {
-    drawSelectedObjectGlow(cx, cy, r, '#ffcf6f', 1.05);
+    drawSelectedObjectGlow(cx, cy, r, '#ffcf6f', mobile ? 0.42 : 1.05);
     ctx.beginPath();
-    ctx.arc(cx, cy, r * 1.62, 0, TWO_PI);
-    ctx.strokeStyle = 'rgba(255,230,160,.62)';
+    ctx.arc(cx, cy, r * (mobile ? 1.05 : 1.62), 0, TWO_PI);
+    ctx.strokeStyle = mobile ? 'rgba(255,230,160,.24)' : 'rgba(255,230,160,.62)';
     ctx.lineWidth = Math.max(1.4, r * 0.06);
     ctx.stroke();
   }
@@ -411,7 +467,7 @@ function getMoonPosition(earthX, earthY, earthRadius) {
     x: earthX + Math.cos(angle) * orbitR,
     y: earthY + Math.sin(angle) * orbitR,
     orbitR,
-    r: Math.max(3, earthRadius * 0.34)
+    r: Math.max(isMobileViewport() ? 4.2 : 3, earthRadius * (isMobileViewport() ? 0.38 : 0.34))
   };
 }
 
@@ -533,9 +589,7 @@ function drawPlanetBody(p, x, y, r) {
 }
 
 function drawPlanet(p, x, y, isActive) {
-  let r = p.nodeRadius * (isActive ? 1.34 : 1);
-  if (p.key === 'jupiter') r *= 1.06;
-  if (p.key === 'pluto') r *= 0.92;
+  const r = getPlanetVisualRadius(p, isActive);
 
   if (isActive) {
     drawSelectedObjectGlow(x, y, r, p.color, selected === p.key ? 1.08 : 0.86);
@@ -606,7 +660,7 @@ function loop(now) {
   ctx.clearRect(0, 0, W, H);
   const sunRadius = drawSun(hovered === 'sun' || selected === 'sun');
 
-  positions = [{ key: 'sun', x: cx, y: cy, r: sunRadius + 18 }];
+  positions = [{ key: 'sun', x: cx, y: cy, r: getTapRadius('sun', sunRadius, 0), visualR: sunRadius }];
   for (const p of planets) {
     const orbitR = p.visualOrbitRatio * maxOrbitRadius;
     drawOrbit(orbitR);
@@ -626,13 +680,15 @@ function loop(now) {
     const py = cy + Math.sin(angle) * renderedOrbitR;
     const hot = hovered === p.key || selected === p.key;
 
+    const planetVisualR = getPlanetVisualRadius(p, hot);
+    const planetHitVisualR = getPlanetVisualRadius(p, false);
     drawPlanet(p, px, py, hot);
-    positions.push({ key: p.key, x: px, y: py, r: Math.max(25, p.nodeRadius + 16) });
+    positions.push({ key: p.key, x: px, y: py, r: getTapRadius(p.key, planetHitVisualR, isMobileViewport() ? 4 : 0), visualR: planetHitVisualR });
 
     if (p.key === 'earth') {
-      const earthR = p.nodeRadius * (hot ? 1.34 : 1);
+      const earthR = planetVisualR;
       const moon = drawMoon(px, py, earthR, hovered === 'moon' || selected === 'moon');
-      positions.push({ key: 'moon', x: moon.x, y: moon.y, r: Math.max(15, moon.r + 9) });
+      positions.push({ key: 'moon', x: moon.x, y: moon.y, r: getTapRadius('moon', moon.r, isMobileViewport() ? 8 : 0), visualR: moon.r });
     }
   }
 
@@ -1056,38 +1112,72 @@ function showPlanet(p, open = true) {
   document.getElementById('infoDiscovery').textContent = p.discovery || 'No single discoverer/date.';
   drawSpinPreview(performance.now());
 
-  if (open) info.classList.add('visible');
+  if (open) {
+    info.classList.add('visible');
+    document.body.classList.add('info-open');
+  }
+}
+
+
+function getPlanetByKey(key) {
+  if (key === 'sun') return SUN_DATA;
+  if (key === 'moon') return MOON_DATA;
+  return planets.find(p => p.key === key) || null;
+}
+
+function pickPlanetFromList(clientX, clientY, list = positions, touchPadding = 0) {
+  const coarse = isMobileViewport();
+  const candidates = [];
+
+  for (const pos of list) {
+    const visualR = pos.visualR || pos.r;
+    const hitRadius = pos.r || getTapRadius(pos.key, visualR, touchPadding);
+    const distance = Math.hypot(clientX - pos.x, clientY - pos.y);
+    if (distance > hitRadius) continue;
+
+    // Lower score wins. Use real distance more than percentage, because percentage
+    // favored big objects and caused wrong selections on mobile.
+    let score = distance;
+
+    if (coarse) {
+      if (pos.key === 'sun') score += 90;       // Sun should only win if tapped directly.
+      if (pos.key === 'saturn') score += 4;     // ring area counts, but nearby centers still win.
+      if (pos.key === 'moon') score -= 5;       // moon stays clickable near its tiny disk.
+      if (pos.key === 'earth') score -= 2;
+    } else {
+      if (pos.key === 'moon') score -= 2;
+    }
+
+    candidates.push({ key: pos.key, score, distance, hitRadius });
+  }
+
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => a.score - b.score || a.distance - b.distance);
+  return getPlanetByKey(candidates[0].key);
 }
 
 function pickPlanet(clientX, clientY, touchPadding = 0) {
-  const moonPos = positions.find(pos => pos.key === 'moon');
-  const earthPos = positions.find(pos => pos.key === 'earth');
+  return pickPlanetFromList(clientX, clientY, positions, touchPadding);
+}
 
-  // The Moon is close to Earth, so its hit area must stay tight.
-  // This keeps the Moon clickable without stealing normal Earth taps/clicks.
-  if (moonPos) {
-    const moonDistance = Math.hypot(clientX - moonPos.x, clientY - moonPos.y);
-    const moonHitRadius = Math.max(15, moonPos.r + Math.min(4, touchPadding * 0.2));
-    const earthDistance = earthPos ? Math.hypot(clientX - earthPos.x, clientY - earthPos.y) : Infinity;
-    const earthHitRadius = earthPos ? earthPos.r + touchPadding : 0;
+function openFromPlanet(planet) {
+  if (!planet) return false;
+  showPlanet(planet, true);
+  return true;
+}
 
-    if (moonDistance <= moonHitRadius && !(earthDistance <= earthHitRadius && earthDistance < moonDistance)) {
-      return MOON_DATA;
-    }
-  }
-
-  for (const pos of positions) {
-    if (pos.key === 'moon') continue;
-    if (Math.hypot(clientX - pos.x, clientY - pos.y) < pos.r + touchPadding) {
-      if (pos.key === 'sun') return SUN_DATA;
-      return planets.find(p => p.key === pos.key);
-    }
-  }
-  return null;
+function openOrCloseFromPoint(clientX, clientY, touchPadding = 0) {
+  if (info.classList.contains('visible')) return false;
+  return openFromPlanet(pickPlanet(clientX, clientY, touchPadding));
 }
 
 canvas.addEventListener('mousemove', event => {
   updateLayerParallax(event.clientX, event.clientY);
+  if (info.classList.contains('visible')) {
+    hovered = null;
+    canvas.style.cursor = 'default';
+    return;
+  }
   const planet = pickPlanet(event.clientX, event.clientY);
   hovered = planet?.key || null;
   canvas.style.cursor = hovered ? 'pointer' : 'default';
@@ -1099,31 +1189,60 @@ canvas.addEventListener('mouseleave', () => {
   canvas.style.cursor = 'default';
 });
 
-canvas.addEventListener('click', event => {
+let activePointerId = null;
+let pointerStartX = 0;
+let pointerStartY = 0;
+let pointerMoved = false;
+let pointerStartCandidate = null;
+let lastCanvasOpenTime = 0;
+
+canvas.addEventListener('pointerdown', event => {
   if (document.body.classList.contains('telescope-open')) return;
-  if (Date.now() - lastTouchTime < 500) return;
-  const planet = pickPlanet(event.clientX, event.clientY);
-  if (planet) showPlanet(planet, true);
+  if (info.classList.contains('visible')) return;
+  activePointerId = event.pointerId;
+  pointerStartX = event.clientX;
+  pointerStartY = event.clientY;
+  pointerMoved = false;
+
+  // Snapshot the intended target at touch start. This prevents moving planets from
+  // changing the target before touchend on phones.
+  const snapshot = positions.map(pos => ({ ...pos }));
+  pointerStartCandidate = pickPlanetFromList(pointerStartX, pointerStartY, snapshot, event.pointerType === 'touch' ? 2 : 0);
+  updateLayerParallax(event.clientX, event.clientY);
+  if (event.pointerType === 'touch') event.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('pointermove', event => {
+  updateLayerParallax(event.clientX, event.clientY);
+  if (activePointerId !== event.pointerId) return;
+  const moveLimit = event.pointerType === 'touch' ? 14 : 7;
+  if (Math.hypot(event.clientX - pointerStartX, event.clientY - pointerStartY) > moveLimit) {
+    pointerMoved = true;
+  }
 });
 
-canvas.addEventListener('touchstart', event => {
+canvas.addEventListener('pointerup', event => {
   if (document.body.classList.contains('telescope-open')) return;
-  lastTouchTime = Date.now();
-  const touch = event.touches[0];
-  updateLayerParallax(touch.clientX, touch.clientY);
-  const planet = pickPlanet(touch.clientX, touch.clientY, 18);
-  if (planet) showPlanet(planet, true);
-}, { passive: true });
-
-canvas.addEventListener('touchmove', event => {
-  if (document.body.classList.contains('telescope-open')) return;
-  const touch = event.touches[0];
-  if (touch) updateLayerParallax(touch.clientX, touch.clientY);
-}, { passive: true });
-
-canvas.addEventListener('touchend', () => {
+  if (activePointerId !== event.pointerId) return;
   resetLayerParallax();
-}, { passive: true });
+  activePointerId = null;
+
+  if (event.pointerType === 'touch') event.preventDefault();
+  if (pointerMoved) return;
+  if (performance.now() - lastCanvasOpenTime < 260) return;
+
+  const planet = pointerStartCandidate || pickPlanet(event.clientX, event.clientY, event.pointerType === 'touch' ? 2 : 0);
+  if (openFromPlanet(planet)) {
+    lastCanvasOpenTime = performance.now();
+  }
+}, { passive: false });
+
+canvas.addEventListener('pointercancel', () => {
+  activePointerId = null;
+  pointerStartCandidate = null;
+  pointerMoved = false;
+  resetLayerParallax();
+});
 
 const closeInfoButton = document.getElementById('closeInfo');
 function closeInfoPanel(event) {
@@ -1131,9 +1250,14 @@ function closeInfoPanel(event) {
   event?.stopPropagation?.();
   if (info.classList.contains('visible')) playClickTone('close');
   info.classList.remove('visible');
+  document.body.classList.remove('info-open');
 }
+
 closeInfoButton.addEventListener('click', closeInfoPanel);
 closeInfoButton.addEventListener('touchend', closeInfoPanel, { passive: false });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeInfoPanel(event);
+});
 function updateSpeedButton() {
   speedMultiplier = SPEED_STATES[speedStateIndex];
   paused = speedMultiplier === 0;

@@ -38,6 +38,22 @@ canvas {
   touch-action: manipulation;
 }
 
+#parallaxLayer,
+#c {
+  position: fixed;
+  inset: 0;
+}
+
+#parallaxLayer {
+  z-index: 0;
+  pointer-events: none;
+}
+
+#c {
+  z-index: 1;
+  background: transparent;
+}
+
 
 .loader-screen {
   position: fixed;
@@ -243,15 +259,20 @@ button {
   position: absolute;
   top: 10px;
   right: 12px;
-  width: 36px;
-  height: 36px;
+  z-index: 60;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, .58);
-  font-size: 24px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  background: rgba(6, 8, 16, .72);
+  color: rgba(255, 255, 255, .82);
+  font-size: 26px;
   line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .close-mini:hover,
@@ -332,6 +353,44 @@ button {
   color: rgba(255, 255, 255, .76);
   font-size: 14px;
   line-height: 1.55;
+}
+
+.spin-preview {
+  margin: 14px 0 12px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .04);
+}
+
+#spinVideo,
+#spinCanvas {
+  display: block;
+  width: 100%;
+  height: 160px;
+  border-radius: 14px;
+  background: #000;
+}
+
+#spinVideo[hidden],
+#spinCanvas[hidden] {
+  display: none;
+}
+
+.spin-meta {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, .86);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.spin-meta span {
+  white-space: nowrap;
 }
 
 .rows {
@@ -483,7 +542,76 @@ body.dock-collapsed #planetDockToggle {
 }
 
 
-#credit {
+/* Restored global telescope button: visible on desktop and mobile */
+#telescopeBtn {
+  position: fixed !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 90 !important;
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  color: rgba(255,255,255,.94) !important;
+  background: rgba(12, 15, 26, .72) !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#telescopeBtn:hover,
+body.telescope-open #telescopeBtn {
+  border-color: rgba(190,224,255,.42) !important;
+  background: rgba(34, 45, 70, .84) !important;
+}
+
+body.telescope-open #telescopeBtn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+#telescopeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+#telescopeOverlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .28);
+}
+
+.telescopeStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: scale(1.07);
+  opacity: .78;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .8s cubic-bezier(.22,.82,.16,1), opacity .8s cubic-bezier(.22,.82,.16,1), filter .8s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+
+body.telescope-open #credit {
+  display: none !important;
   position: fixed;
   bottom: 9px;
   left: 12px;
@@ -498,64 +626,213 @@ body.dock-collapsed #planetDockToggle {
 }
 
 @media (max-width: 760px) {
-  .card {
-    top: 76px;
-    left: 12px;
-    width: min(320px, calc(100vw - 24px));
-    padding: 16px;
-    border-radius: 19px;
+  /* mobile telescope button override */
+  #telescopeBtn {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
   }
 
-  .card h1 {
-    font-size: 21px;
+  #title {
+    top: max(12px, env(safe-area-inset-top));
+    left: 12px;
+    max-width: calc(100vw - 72px);
+  }
+
+  #title span {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+  }
+
+  #title strong {
+    margin-top: 3px;
+    font-size: 14px;
   }
 
   #info {
     top: auto;
-    right: 12px;
-    bottom: 132px;
-    left: 12px;
+    right: 10px;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    left: 10px;
     width: auto;
-    max-height: 54svh;
-    transform: translateY(24px);
+    max-height: min(62svh, 520px);
+    padding: 14px;
+    border-radius: 20px;
+    transform: translateY(28px);
+    overscroll-behavior: contain;
   }
 
   #info.visible {
     transform: translateY(0);
   }
 
+  #info .close {
+    top: 8px;
+    right: 8px;
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
+
   #infoImage {
-    height: 178px;
+    height: min(34svh, 190px);
+    margin-bottom: 10px;
+  }
+
+  #info h2 {
+    font-size: 22px;
+  }
+
+  .badge {
+    margin-top: 10px;
+  }
+
+  .fact {
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    padding: 8px 0;
+  }
+
+  .row b {
+    text-align: left;
   }
 
   #planetDock {
-    top: 96px;
-    left: 12px;
-    width: 132px;
-    max-height: calc(100svh - 170px);
+    top: 72px;
+    left: 10px;
+    width: min(138px, calc(100vw - 20px));
+    max-height: calc(100svh - 150px);
     padding: 8px;
     border-radius: 18px;
     justify-content: flex-start;
   }
 
+  #planetDock button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  #planetDock .planet-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
   #planetDockToggle {
-    top: 102px;
-    left: 154px;
+    top: 76px;
+    left: 156px;
+    width: 38px;
+    height: 38px;
   }
 
   body.dock-collapsed #planetDockToggle {
-    left: 12px;
+    left: 10px;
   }
 
   #ui {
-    width: calc(100vw - 24px);
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    left: 50%;
     justify-content: center;
   }
 
-
-  #credit {
-    display: none;
+  #pauseBtn {
+    min-width: 78px;
+    min-height: 42px;
+    padding: 9px 16px;
   }
+
+  #telescopeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+#telescopeOverlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .28);
+}
+
+.telescopeStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: scale(1.07);
+  opacity: .78;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .8s cubic-bezier(.22,.82,.16,1), opacity .8s cubic-bezier(.22,.82,.16,1), filter .8s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+
+body.telescope-open #telescopeOverlay {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1);
+  opacity: 1;
+  filter: saturate(1.04) blur(0);
+}
+
+#telescopeBtn {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(255,255,255,.92);
+}
+
+#telescopeBtn:hover,
+body.telescope-open #telescopeBtn {
+  border-color: rgba(190,224,255,.4);
+  background: rgba(190,224,255,.12);
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+
+#credit {
+  display: none !important;
+}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -570,5 +847,134 @@ body.dock-collapsed #planetDockToggle {
   .loader-ring,
   .loader-bar::before {
     animation: none !important;
+  }
+}
+
+.spin-meta { display: none !important; }
+
+/* v47: global telescope overlay visibility fix for desktop and mobile */
+body.telescope-open #telescopeOverlay {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+  filter: saturate(1.04) blur(0) !important;
+}
+
+body.telescope-open #telescopeFrame {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.telescope-open #telescopeBtn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 90 !important;
+}
+
+
+/* v50 final stability + parallax polish */
+#c {
+  cursor: default;
+  touch-action: manipulation;
+}
+
+#telescopeBtn,
+#planetDockToggle,
+#pauseBtn,
+#closeInfo,
+#planetDock button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#telescopeOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 40 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: block !important;
+  background: #000;
+  overflow: hidden;
+}
+
+.telescopeStage {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+  transform: scale(1.055);
+  opacity: 0.82;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .78s cubic-bezier(.22,.82,.16,1), opacity .78s cubic-bezier(.22,.82,.16,1), filter .78s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  display: block !important;
+  background: #000 !important;
+}
+
+body.telescope-open #telescopeOverlay {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+  filter: saturate(1.04) blur(0) !important;
+}
+
+#telescopeBtn {
+  position: fixed !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 90 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 760px) {
+  #telescopeBtn {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
   }
 }

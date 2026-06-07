@@ -1,0 +1,1128 @@
+:root {
+  color-scheme: dark;
+  --bg: #02030a;
+  --panel: rgba(9, 11, 22, .74);
+  --border: rgba(255, 255, 255, .13);
+  --text: rgba(255, 255, 255, .9);
+  --muted: rgba(255, 255, 255, .56);
+  --soft: rgba(255, 255, 255, .07);
+  --accent: rgba(190, 224, 255, .9);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  touch-action: manipulation;
+}
+
+#parallaxLayer,
+#c {
+  position: fixed;
+  inset: 0;
+}
+
+#parallaxLayer {
+  z-index: 0;
+  pointer-events: none;
+}
+
+#c {
+  z-index: 1;
+  background: transparent;
+}
+
+
+.loader-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #02030a;
+  color: rgba(255,255,255,.92);
+  transition: opacity .55s ease, visibility .55s ease;
+}
+
+.loader-screen::before {
+  content: '';
+  position: absolute;
+  inset: -90px;
+  background:
+    radial-gradient(circle at 24% 28%, rgba(93, 166, 255, .48), transparent 28%),
+    radial-gradient(circle at 72% 30%, rgba(255, 194, 88, .42), transparent 26%),
+    radial-gradient(circle at 50% 74%, rgba(120, 77, 255, .42), transparent 34%),
+    radial-gradient(circle at 50% 50%, rgba(30, 69, 112, .72), #02030a 68%);
+  filter: blur(60px);
+  transform: scale(1.08);
+  opacity: .95;
+}
+
+.loader-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 3, 10, .28);
+  backdrop-filter: blur(18px);
+}
+
+.loader-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  width: min(92vw, 420px);
+  text-align: center;
+}
+
+.loader-system {
+  position: relative;
+  width: min(68vw, 250px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.loader-sun {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #fff4b8 0 14%, #ffcf62 30%, #f47d22 68%, #a93e13 100%);
+  box-shadow: 0 0 28px rgba(255, 174, 69, .58), 0 0 80px rgba(255, 115, 32, .24);
+}
+
+.loader-ring {
+  position: absolute;
+  inset: var(--inset, 28px);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  animation: loaderSpin var(--speed, 3s) linear infinite;
+}
+
+.loader-ring::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: var(--planet-size, 9px);
+  height: var(--planet-size, 9px);
+  border-radius: 50%;
+  background: var(--planet, #8fd0ff);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--planet, #8fd0ff), transparent 35%);
+  transform: translateX(-50%);
+}
+
+.loader-title {
+  font-size: clamp(20px, 4.8vw, 34px);
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+
+.loader-copy {
+  color: rgba(255,255,255,.64);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.loader-bar {
+  width: min(250px, 70vw);
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,.10);
+}
+
+.loader-bar::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7ad7ff, #ffd36b, #ff8a45);
+  transform-origin: left;
+  animation: loaderProgress 3s ease forwards;
+}
+
+.loader-fact {
+  color: rgba(255,255,255,.46);
+  font-size: 12px;
+}
+
+@keyframes loaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loaderProgress {
+  from { transform: scaleX(.03); }
+  to { transform: scaleX(1); }
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(14px);
+}
+
+#title {
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top));
+  left: max(18px, env(safe-area-inset-left));
+  width: auto;
+  max-width: calc(100vw - 36px);
+  transform: none;
+  z-index: 10;
+  text-align: left;
+  pointer-events: none;
+}
+
+#title span,
+.eyebrow {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 2.4px;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+#title strong {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, .86);
+  font-size: clamp(15px, 2vw, 22px);
+  letter-spacing: .2px;
+}
+
+.card {
+  position: fixed;
+  top: 92px;
+  left: 24px;
+  z-index: 12;
+  width: min(340px, calc(100vw - 48px));
+  padding: 20px;
+  border-radius: 22px;
+}
+
+.card h1 {
+  margin: 8px 0 10px;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.close-mini,
+#info .close {
+  position: sticky;
+  top: 0;
+  right: 0;
+  z-index: 60;
+  float: right;
+  width: 48px;
+  height: 48px;
+  margin: -6px -6px 4px 8px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  background: rgba(6, 8, 16, .72);
+  color: rgba(255, 255, 255, .82);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.close-mini:hover,
+#info .close:hover {
+  color: #fff;
+}
+
+#info {
+  position: fixed;
+  top: 50%;
+  right: 24px;
+  z-index: 20;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100svh - 168px);
+  overflow: auto;
+  padding: 18px;
+  border-radius: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(22px);
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+#info.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+#infoImage {
+  width: 100%;
+  height: 220px;
+  object-fit: contain;
+  margin-bottom: 14px;
+  border-radius: 18px;
+  background: transparent;
+}
+
+#infoImage.focus-uranus {
+  transform: scale(1.22);
+  transform-origin: center;
+}
+
+#earthDistanceRow[hidden] {
+  display: none;
+}
+
+
+#info h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+}
+
+#info .type {
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.badge {
+  display: inline-flex;
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(190, 224, 255, .22);
+  border-radius: 999px;
+  background: rgba(190, 224, 255, .07);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.fact {
+  margin: 14px 0;
+  color: rgba(255, 255, 255, .76);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.spin-preview {
+  margin: 14px 0 12px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .04);
+}
+
+#spinVideo,
+#spinCanvas {
+  display: block;
+  width: 100%;
+  height: 160px;
+  border-radius: 14px;
+  background: #000;
+}
+
+#spinVideo[hidden],
+#spinCanvas[hidden] {
+  display: none;
+}
+
+.spin-meta {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, .86);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.spin-meta span {
+  white-space: nowrap;
+}
+
+.rows {
+  display: grid;
+  gap: 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, .075);
+}
+
+.row span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.row b {
+  min-width: 0;
+  color: rgba(255, 255, 255, .86);
+  font-size: 12px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+
+#planetDock {
+  position: fixed;
+  top: 108px;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: auto;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: min(160px, calc(100vw - 28px));
+  max-height: calc(100svh - 190px);
+  padding: 10px;
+  border-radius: 22px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: none;
+  opacity: 1;
+  scrollbar-width: thin;
+  transition: transform .28s ease, opacity .22s ease;
+}
+
+body.dock-collapsed #planetDock {
+  transform: translateX(calc(-100% - 28px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+#planetDockToggle {
+  position: fixed;
+  top: 116px;
+  left: calc(max(14px, env(safe-area-inset-left)) + min(160px, calc(100vw - 28px)) + 10px);
+  z-index: 16;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .045);
+  color: rgba(255, 255, 255, .82);
+  font-size: 22px;
+  line-height: 1;
+  transition: left .28s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+#planetDockToggle:hover {
+  border-color: rgba(190, 224, 255, .38);
+  background: rgba(190, 224, 255, .11);
+}
+
+body.dock-collapsed #planetDockToggle {
+  left: max(14px, env(safe-area-inset-left));
+}
+
+#planetDock::-webkit-scrollbar {
+  width: 6px;
+}
+
+#planetDock::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .16);
+  border-radius: 999px;
+}
+
+#planetDock button,
+#pauseBtn {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .045);
+  color: rgba(255, 255, 255, .86);
+  font-size: 12px;
+}
+
+#planetDock button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  white-space: nowrap;
+}
+
+#planetDock button.active,
+#planetDock button:hover,
+#pauseBtn:hover {
+  border-color: rgba(190, 224, 255, .38);
+  background: rgba(190, 224, 255, .11);
+}
+
+#planetDock .planet-thumb {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  display: inline-block;
+  filter: none;
+}
+
+#ui {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+
+#pauseBtn {
+  min-width: 74px;
+  padding: 8px 15px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+
+/* Restored global telescope button: visible on desktop and mobile */
+#telescopeBtn {
+  position: fixed !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 90 !important;
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  color: rgba(255,255,255,.94) !important;
+  background: rgba(12, 15, 26, .72) !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+#telescopeBtn:hover,
+body.telescope-open #telescopeBtn {
+  border-color: rgba(190,224,255,.42) !important;
+  background: rgba(34, 45, 70, .84) !important;
+}
+
+body.telescope-open #telescopeBtn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+#telescopeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+#telescopeOverlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .28);
+}
+
+.telescopeStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: scale(1.07);
+  opacity: .78;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .8s cubic-bezier(.22,.82,.16,1), opacity .8s cubic-bezier(.22,.82,.16,1), filter .8s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+
+body.telescope-open #credit {
+  display: none !important;
+  position: fixed;
+  bottom: 9px;
+  left: 12px;
+  z-index: 9;
+  color: rgba(255, 255, 255, .32);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+#credit code {
+  color: rgba(255, 255, 255, .52);
+}
+
+@media (max-width: 760px) {
+  /* mobile telescope button override */
+  #telescopeBtn {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+
+  #title {
+    top: max(12px, env(safe-area-inset-top));
+    left: 12px;
+    max-width: calc(100vw - 72px);
+  }
+
+  #title span {
+    font-size: 9px;
+    letter-spacing: 1.8px;
+  }
+
+  #title strong {
+    margin-top: 3px;
+    font-size: 14px;
+  }
+
+  #info {
+    top: auto;
+    right: 8px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-height: min(64svh, 520px);
+    padding: 14px;
+    border-radius: 20px;
+    transform: translateY(28px);
+    overscroll-behavior: contain;
+  }
+
+  #info.visible {
+    transform: translateY(0);
+  }
+
+  #info .close {
+    top: 0;
+    width: 64px;
+    height: 64px;
+    margin: -8px -8px 4px 8px;
+    font-size: 34px;
+    background: rgba(16, 20, 34, .92);
+    border-color: rgba(255,255,255,.34);
+  }
+
+  #infoImage {
+    height: min(34svh, 190px);
+    margin-bottom: 10px;
+  }
+
+  #info h2 {
+    font-size: 22px;
+  }
+
+  .badge {
+    margin-top: 10px;
+  }
+
+  .fact {
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    padding: 8px 0;
+  }
+
+  .row b {
+    text-align: left;
+  }
+
+  #planetDock {
+    top: 72px;
+    left: 10px;
+    width: min(138px, calc(100vw - 20px));
+    max-height: calc(100svh - 150px);
+    padding: 8px;
+    border-radius: 18px;
+    justify-content: flex-start;
+  }
+
+  #planetDock button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  #planetDock .planet-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  #planetDockToggle {
+    top: 76px;
+    left: 156px;
+    width: 38px;
+    height: 38px;
+  }
+
+  body.dock-collapsed #planetDockToggle {
+    left: 10px;
+  }
+
+  #ui {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    left: 50%;
+    justify-content: center;
+  }
+
+  #pauseBtn {
+    min-width: 78px;
+    min-height: 42px;
+    padding: 9px 16px;
+  }
+
+  #telescopeOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .45s ease, visibility .45s ease;
+}
+
+#telescopeOverlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .28);
+}
+
+.telescopeStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: scale(1.07);
+  opacity: .78;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .8s cubic-bezier(.22,.82,.16,1), opacity .8s cubic-bezier(.22,.82,.16,1), filter .8s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #000;
+}
+
+body.telescope-open #telescopeOverlay {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1);
+  opacity: 1;
+  filter: saturate(1.04) blur(0);
+}
+
+#telescopeBtn {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(255,255,255,.92);
+}
+
+#telescopeBtn:hover,
+body.telescope-open #telescopeBtn {
+  border-color: rgba(190,224,255,.4);
+  background: rgba(190,224,255,.12);
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+
+#credit {
+  display: none !important;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .loader-ring,
+  .loader-bar::before {
+    animation: none !important;
+  }
+}
+
+.spin-meta { display: none !important; }
+
+/* v47: global telescope overlay visibility fix for desktop and mobile */
+body.telescope-open #telescopeOverlay {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+  filter: saturate(1.04) blur(0) !important;
+}
+
+body.telescope-open #telescopeFrame {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  opacity: 1 !important;
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.telescope-open #telescopeBtn {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 90 !important;
+}
+
+
+/* v50 final stability + parallax polish */
+#c {
+  cursor: default;
+  touch-action: manipulation;
+}
+
+#telescopeBtn,
+#planetDockToggle,
+#pauseBtn,
+#closeInfo,
+#planetDock button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#telescopeOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 40 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: block !important;
+  background: #000;
+  overflow: hidden;
+}
+
+.telescopeStage {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+  transform: scale(1.055);
+  opacity: 0.82;
+  filter: saturate(1.06) blur(4px);
+  transition: transform .78s cubic-bezier(.22,.82,.16,1), opacity .78s cubic-bezier(.22,.82,.16,1), filter .78s cubic-bezier(.22,.82,.16,1);
+}
+
+#telescopeFrame {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  display: block !important;
+  background: #000 !important;
+}
+
+body.telescope-open #telescopeOverlay {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+body.telescope-open .telescopeStage {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+  filter: saturate(1.04) blur(0) !important;
+}
+
+#telescopeBtn {
+  position: fixed !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  z-index: 90 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+body.telescope-open #title,
+body.telescope-open #planetDock,
+body.telescope-open #planetDockToggle,
+body.telescope-open #ui,
+body.telescope-open #info {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 760px) {
+  #telescopeBtn {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* v67 mobile usability hardening */
+#infoBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 18;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.02);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+  touch-action: none;
+}
+
+body.info-open #infoBackdrop {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.info-open #c {
+  pointer-events: none;
+}
+
+body.info-open #planetDock,
+body.info-open #planetDockToggle,
+body.info-open #ui,
+body.info-open #telescopeBtn {
+  pointer-events: auto;
+}
+
+#info {
+  z-index: 30;
+}
+
+@media (max-width: 760px) {
+  canvas {
+    touch-action: none;
+  }
+
+  #info {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+    max-height: min(58svh, 470px) !important;
+    padding: 12px !important;
+    border-radius: 20px !important;
+  }
+
+  #info .close {
+    position: sticky !important;
+    top: 0 !important;
+    width: 68px !important;
+    height: 68px !important;
+    min-width: 68px !important;
+    min-height: 68px !important;
+    margin: -6px -6px 2px 8px !important;
+    font-size: 38px !important;
+    z-index: 80 !important;
+  }
+
+  #infoImage {
+    height: min(30svh, 176px) !important;
+  }
+
+  #info h2 {
+    font-size: 21px !important;
+  }
+
+  .fact {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+}
+
+/* v68 fixed mobile interaction reset */
+html, body {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#parallaxLayer, #c {
+  width: 100dvw !important;
+  height: 100dvh !important;
+  touch-action: none !important;
+}
+
+#c {
+  pointer-events: auto !important;
+}
+
+body.info-open #c {
+  pointer-events: auto !important;
+}
+
+#infoBackdrop {
+  background: transparent !important;
+}
+
+@media (max-width: 760px) {
+  #title {
+    pointer-events: none;
+  }
+
+  #info {
+    max-height: min(70dvh, 620px) !important;
+  }
+
+  #closeInfo {
+    min-width: 56px !important;
+    min-height: 56px !important;
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .panel {
+    backdrop-filter: none !important;
+    background: rgba(9, 11, 22, .88);
+  }
+
+  .loader-screen::after {
+    backdrop-filter: none !important;
+    background: rgba(2, 3, 10, .46);
+  }
+}
+
+
+/* v71 outside-card close behavior: keep backdrop invisible/non-blocking so planet taps still work. */
+#infoBackdrop,
+body.info-open #infoBackdrop {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

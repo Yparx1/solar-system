@@ -56,6 +56,102 @@ let layerParallaxY = 0;
 let lastParallaxInputTime = 0;
 const PLANET_TONES = { sun: 196, mercury: 262, venus: 294, earth: 330, mars: 349, jupiter: 392, saturn: 440, uranus: 494, neptune: 523, pluto: 587, moon: 659 };
 
+const languageSelect = document.getElementById('languageSelect');
+const TRANSLATIONS = {
+  en: {
+    code: 'en',
+    title: 'Solar System', instruction: 'Tap a planet', language: 'Language',
+    closePanel: 'Close planet panel', showList: 'Show planet list', hideList: 'Hide planet list',
+    playing: value => `Playing at ${value}x speed. Tap to change speed.`, paused: 'Paused. Tap to play at 1x speed.',
+    avgSun: 'Avg. distance from Sun', avgEarth: 'Avg. distance from Earth', approxEarth: 'Approx. distance from Earth', position: 'Position',
+    diameter: 'Diameter', mass: 'Mass', revolution: 'Revolution', motion: 'Motion', day: 'Day', moons: 'Moons', discovery: 'Discovery',
+    youAreHere: 'You are here', notAvailable: 'Not available', approx: 'approx.', sunEarthAverage: '149.6 million km average', moonEarthAverage: '384,400 km average',
+    loadingTitle: 'Launching Solar Guide', loadingCopy: 'Warming up the Sun, lining up the orbits, and packing space facts.', loadingTip: 'Tip: tap a planet to hear its tiny space tone.',
+    telescopeOpen: 'Open telescope Milky Way view', telescopeClose: 'Close telescope Milky Way view',
+    km: 'km', millionKm: 'million km', billionKm: 'billion km'
+  },
+  th: {
+    code: 'th',
+    title: 'ระบบสุริยะ', instruction: 'แตะดาวเพื่อเรียนรู้', language: 'ภาษา',
+    closePanel: 'ปิดข้อมูล', showList: 'แสดงรายชื่อดาว', hideList: 'ซ่อนรายชื่อดาว',
+    playing: value => `กำลังเล่นที่ความเร็ว ${value} เท่า แตะเพื่อเปลี่ยนความเร็ว`, paused: 'หยุดอยู่ แตะเพื่อเล่นที่ความเร็ว 1 เท่า',
+    avgSun: 'ระยะเฉลี่ยจากดวงอาทิตย์', avgEarth: 'ระยะเฉลี่ยจากโลก', approxEarth: 'ระยะโดยประมาณจากโลก', position: 'ตำแหน่ง',
+    diameter: 'เส้นผ่านศูนย์กลาง', mass: 'มวล', revolution: 'เวลาโคจร', motion: 'การเคลื่อนที่', day: 'หนึ่งวันยาวเท่าไร', moons: 'ดวงจันทร์บริวาร', discovery: 'การค้นพบ',
+    youAreHere: 'คุณอยู่ที่นี่', notAvailable: 'ไม่มีข้อมูล', approx: 'โดยประมาณ', sunEarthAverage: '149.6 ล้านกิโลเมตรโดยเฉลี่ย', moonEarthAverage: '384,400 กิโลเมตรโดยเฉลี่ย',
+    loadingTitle: 'กำลังเปิดคู่มือระบบสุริยะ', loadingCopy: 'กำลังเตรียมดวงอาทิตย์ วงโคจร และความรู้สนุก ๆ', loadingTip: 'เคล็ดลับ: แตะดาวเพื่อฟังเสียงเล็ก ๆ จากอวกาศ',
+    telescopeOpen: 'เปิดกล้องดูทางช้างเผือก', telescopeClose: 'ปิดกล้องดูทางช้างเผือก',
+    km: 'กิโลเมตร', millionKm: 'ล้านกิโลเมตร', billionKm: 'พันล้านกิโลเมตร'
+  }
+};
+let currentLanguage = localStorage.getItem('solarGuideLanguage') || 'en';
+if (!TRANSLATIONS[currentLanguage]) currentLanguage = 'en';
+
+const EXTRA_I18N = {
+  th: {
+    sun: {
+      name: 'ดวงอาทิตย์', type: 'ดาวฤกษ์', badge: 'ดาวฤกษ์ที่ใกล้เราที่สุด', distanceLabel: 'ตำแหน่ง',
+      kidFact: 'ดวงอาทิตย์เป็นดาวฤกษ์ที่อยู่ตรงกลางของระบบสุริยะ มันให้แสงและความร้อนแก่โลก และแรงโน้มถ่วงของมันช่วยดึงดาวเคราะห์ให้โคจรรอบดวงอาทิตย์\n\nเกร็ดน่ารู้: ดวงอาทิตย์มีมวลมากจนแรงโน้มถ่วงของมันยึดระบบสุริยะไว้ด้วยกัน',
+      mission: 'สังเกตแสงสว่างของดวงอาทิตย์ พลังงานจากดวงอาทิตย์ช่วยให้พืช สัตว์ และมนุษย์อยู่บนโลกได้',
+      motion: 'ดาวเคราะห์โคจรรอบดวงอาทิตย์', discovery: 'รู้จักมาตั้งแต่ก่อนประวัติศาสตร์ ไม่มีผู้ค้นพบคนเดียว', distance: '149.6 ล้านกิโลเมตรโดยเฉลี่ยจากโลก', diameter: '1.39 ล้านกิโลเมตร', day: 'ประมาณ 27 วันบนโลก', year: 'ประมาณ 225–250 ล้านปีโลก รอบทางช้างเผือก', revolution: 'ประมาณ 225–250 ล้านปีโลก รอบทางช้างเผือก', mass: '1.99 × 10³⁰ กิโลกรัม', moons: 'ไม่มี'
+    },
+    moon: {
+      name: 'ดวงจันทร์', type: 'ดาวบริวารธรรมชาติ', badge: 'ดวงจันทร์ของโลก', distanceLabel: 'ระยะเฉลี่ยจากโลก',
+      kidFact: 'ดวงจันทร์เป็นดาวบริวารธรรมชาติของโลก มันโคจรรอบโลก และมนุษย์เคยเดินทางไปเหยียบบนดวงจันทร์แล้ว\n\nเกร็ดน่ารู้: ดวงจันทร์หันด้านเดิมเข้าหาโลกเสมอ',
+      mission: 'สังเกตว่าดวงจันทร์อยู่ใกล้โลก มันโคจรรอบโลก ขณะที่โลกก็โคจรรอบดวงอาทิตย์',
+      motion: 'โคจรรอบโลกไปทางเดียวกับโลก', discovery: 'รู้จักมาตั้งแต่ก่อนประวัติศาสตร์ ไม่มีผู้ค้นพบคนเดียว', distance: '384,400 กิโลเมตรโดยเฉลี่ยจากโลก', diameter: '3,475 กิโลเมตร', day: '27.3 วันบนโลก', year: '27.3 วันบนโลก รอบโลก', revolution: '27.3 วันบนโลก รอบโลก', mass: '7.35 × 10²² กิโลกรัม', moons: 'ไม่มี'
+    }
+  }
+};
+
+function t(key) {
+  return (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage][key]) || TRANSLATIONS.en[key] || key;
+}
+
+function localizeBody(body) {
+  if (!body) return body;
+  const extra = EXTRA_I18N[currentLanguage]?.[body.key] || {};
+  const own = body.i18n?.[currentLanguage] || {};
+  return { ...body, ...extra, ...own };
+}
+
+function localizedName(body) {
+  return localizeBody(body).name;
+}
+
+function applyLanguageUI() {
+  const lang = TRANSLATIONS[currentLanguage] || TRANSLATIONS.en;
+  document.documentElement.lang = currentLanguage === 'th' ? 'th' : 'en';
+  document.body.classList.toggle('lang-th', currentLanguage === 'th');
+  document.getElementById('titleEyebrow').textContent = lang.title;
+  document.getElementById('titleInstruction').textContent = lang.instruction;
+  document.querySelector('#languageControl span').textContent = lang.language;
+  if (languageSelect) languageSelect.value = currentLanguage;
+  document.getElementById('closeInfo')?.setAttribute('aria-label', lang.closePanel);
+  infoBackdrop?.setAttribute('aria-label', lang.closePanel);
+  document.querySelector('.loader-title') && (document.querySelector('.loader-title').textContent = lang.loadingTitle);
+  document.querySelector('.loader-copy') && (document.querySelector('.loader-copy').textContent = lang.loadingCopy);
+  document.querySelector('.loader-fact') && (document.querySelector('.loader-fact').textContent = lang.loadingTip);
+  document.getElementById('infoDiamLabel').textContent = lang.diameter;
+  document.getElementById('infoMassLabel').textContent = lang.mass;
+  document.getElementById('infoPeriodLabel').textContent = lang.revolution;
+  document.getElementById('infoMotionLabel').textContent = lang.motion;
+  document.getElementById('infoDayLabel').textContent = lang.day;
+  document.getElementById('infoMoonsLabel').textContent = lang.moons;
+  document.getElementById('infoDiscoveryLabel').textContent = lang.discovery;
+  planetDockToggle?.setAttribute('aria-label', document.body.classList.contains('dock-collapsed') ? lang.showList : lang.hideList);
+  telescopeBtn?.setAttribute('aria-label', document.body.classList.contains('telescope-open') ? lang.telescopeClose : lang.telescopeOpen);
+  updateSpeedButton();
+}
+
+function setLanguage(lang) {
+  if (!TRANSLATIONS[lang]) return;
+  currentLanguage = lang;
+  localStorage.setItem('solarGuideLanguage', lang);
+  applyLanguageUI();
+  buildDock();
+  if (currentInfoBody) showPlanet(getPlanetByKey(currentInfoBody.key) || currentInfoBody, false);
+}
+
 // Keep the mobile page fixed: no browser pinch zoom or scroll gestures over the canvas.
 document.addEventListener('gesturestart', event => event.preventDefault(), { passive: false });
 document.addEventListener('gesturechange', event => event.preventDefault(), { passive: false });
@@ -229,6 +325,7 @@ async function init() {
 
   preload('assets/planets/sun.png');
   preload('assets/planets/moon.png');
+  applyLanguageUI();
   buildDock();
   resize();
   showPlanet(planets.find(p => p.key === 'earth') || planets[0], false);
@@ -623,7 +720,7 @@ function drawPlanet(p, x, y, isActive) {
     ctx.font = '650 11px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,.88)';
     ctx.textAlign = 'center';
-    ctx.fillText(p.name, x, labelY);
+    ctx.fillText(localizedName(p), x, labelY);
   }
 }
 
@@ -1082,12 +1179,13 @@ function drawSpinPreview(now = performance.now()) {
 
 function buildDock() {
   dock.innerHTML = '';
-  [SUN_DATA, ...planets].forEach(p => {
+  [SUN_DATA, ...planets].forEach(raw => {
+    const p = localizeBody(raw);
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.dataset.key = p.key;
-    btn.innerHTML = `<img class="planet-thumb" src="assets/planets/${p.key}.png" alt="${p.name}" /><span>${p.name}</span>`;
-    btn.addEventListener('click', () => showPlanet(p, true));
+    btn.dataset.key = raw.key;
+    btn.innerHTML = `<img class="planet-thumb" src="assets/planets/${raw.key}.png" alt="${p.name}" /><span>${p.name}</span>`;
+    btn.addEventListener('click', () => showPlanet(raw, true));
     dock.appendChild(btn);
   });
 }
@@ -1100,31 +1198,37 @@ function formatSeconds(seconds) {
 }
 
 function formatDistanceKm(km) {
-  if (!Number.isFinite(km)) return 'Not available';
+  if (!Number.isFinite(km)) return t('notAvailable');
+  if (currentLanguage === 'th') {
+    if (km >= 1000000000) return `${(km / 1000000000).toFixed(2)} ${t('billionKm')}`;
+    if (km >= 1000000) return `${(km / 1000000).toFixed(1)} ${t('millionKm')}`;
+    return `${Math.round(km).toLocaleString()} ${t('km')}`;
+  }
   if (km >= 1000000000) return `${(km / 1000000000).toFixed(2)} billion km`;
   if (km >= 1000000) return `${(km / 1000000).toFixed(1)} million km`;
   return `${Math.round(km).toLocaleString()} km`;
 }
 
 function getApproxEarthDistance(p) {
-  if (p.key === 'sun') return '149.6 million km average';
-  if (p.key === 'moon') return '384,400 km average';
-  if (p.key === 'earth') return 'You are here';
+  if (p.key === 'sun') return t('sunEarthAverage');
+  if (p.key === 'moon') return t('moonEarthAverage');
+  if (p.key === 'earth') return t('youAreHere');
 
   const earth = planets.find(item => item.key === 'earth');
-  if (!earth || !REAL_ORBIT_AU[p.key]) return 'Not available';
+  if (!earth || !REAL_ORBIT_AU[p.key]) return t('notAvailable');
 
   const earthAngle = getPlanetAngle(earth);
   const planetAngle = getPlanetAngle(p);
   const a = REAL_ORBIT_AU[p.key];
   const delta = planetAngle - earthAngle;
   const distanceAU = Math.sqrt(1 + a * a - 2 * a * Math.cos(delta));
-  return `${formatDistanceKm(distanceAU * AU_IN_KM)} approx.`;
+  return `${formatDistanceKm(distanceAU * AU_IN_KM)} ${t('approx')}`;
 }
 
-function showPlanet(p, open = true) {
-  selected = p.key;
-  currentInfoBody = p;
+function showPlanet(rawBody, open = true) {
+  const p = localizeBody(rawBody);
+  selected = rawBody.key;
+  currentInfoBody = rawBody;
   const spinPreviewEl = document.getElementById('spinPreview');
   const preview = getRotationPreview(p);
   if (spinPreviewEl) spinPreviewEl.hidden = !!preview.noPreview;
@@ -1142,19 +1246,19 @@ function showPlanet(p, open = true) {
   document.getElementById('infoType').textContent = p.type;
   document.getElementById('infoBadge').textContent = p.badge;
   document.getElementById('infoFact').textContent = p.kidFact;
-  document.getElementById('infoDistLabel').textContent = p.distanceLabel || 'Avg. distance from Sun';
+  document.getElementById('infoDistLabel').textContent = p.distanceLabel || t('avgSun');
   document.getElementById('infoDist').textContent = p.distance;
   const earthDistanceRow = document.getElementById('earthDistanceRow');
-  document.getElementById('earthDistanceLabel').textContent = p.key === 'sun' ? 'Avg. distance from Earth' : 'Approx. distance from Earth';
+  document.getElementById('earthDistanceLabel').textContent = p.key === 'sun' ? t('avgEarth') : t('approxEarth');
   document.getElementById('infoEarthDist').textContent = getApproxEarthDistance(p);
   earthDistanceRow.hidden = false;
   document.getElementById('infoDiam').textContent = p.diameter;
-  document.getElementById('infoMass').textContent = p.mass || 'Not available';
-  document.getElementById('infoPeriod').textContent = p.revolution || p.year || (p.periodYears < 1 ? `${Math.round(p.periodYears * 365)} Earth days` : `${p.periodYears} Earth years`);
-  document.getElementById('infoMotion').textContent = p.motion || (p.orbitDirection === -1 ? 'Retrograde visual orbit' : 'Prograde visual orbit');
+  document.getElementById('infoMass').textContent = p.mass || t('notAvailable');
+  document.getElementById('infoPeriod').textContent = p.revolution || p.year || (currentLanguage === 'th' ? (p.periodYears < 1 ? `${Math.round(p.periodYears * 365)} วันบนโลก` : `${p.periodYears} ปีโลก`) : (p.periodYears < 1 ? `${Math.round(p.periodYears * 365)} Earth days` : `${p.periodYears} Earth years`));
+  document.getElementById('infoMotion').textContent = p.motion || (currentLanguage === 'th' ? (p.orbitDirection === -1 ? 'โคจรย้อนทาง' : 'โคจรไปทางเดียวกับโลก') : (p.orbitDirection === -1 ? 'Retrograde visual orbit' : 'Prograde visual orbit'));
   document.getElementById('infoDay').textContent = p.day;
   document.getElementById('infoMoons').textContent = p.moons;
-  document.getElementById('infoDiscovery').textContent = p.discovery || 'No single discoverer/date.';
+  document.getElementById('infoDiscovery').textContent = p.discovery || (currentLanguage === 'th' ? 'ไม่มีผู้ค้นพบคนเดียว' : 'No single discoverer/date.');
   drawSpinPreview(performance.now());
 
   if (open) {
@@ -1316,7 +1420,7 @@ document.addEventListener('click', event => {
   if (info.contains(event.target)) return;
 
   // Let the canvas decide whether the user tapped another planet or empty space.
-  if (event.target === canvas || event.target === parallaxCanvas) return;
+  if (event.target === canvas || event.target === bgCanvas) return;
 
   closeInfoPanel(event);
 }, true);
@@ -1329,7 +1433,7 @@ function updateSpeedButton() {
   paused = speedMultiplier === 0;
   const btn = document.getElementById('pauseBtn');
   btn.textContent = paused ? '▶' : `⏸ ${speedMultiplier}×`;
-  btn.setAttribute('aria-label', paused ? 'Paused. Tap to play at 1x speed.' : `Playing at ${speedMultiplier}x speed. Tap to change speed.`);
+  btn.setAttribute('aria-label', paused ? t('paused') : t('playing')(speedMultiplier));
 }
 
 document.getElementById('pauseBtn').addEventListener('click', function () {
@@ -1343,7 +1447,7 @@ planetDockToggle?.addEventListener('click', () => {
   const collapsed = document.body.classList.toggle('dock-collapsed');
   planetDockToggle.textContent = collapsed ? '☰' : '‹';
   planetDockToggle.setAttribute('aria-expanded', String(!collapsed));
-  planetDockToggle.setAttribute('aria-label', collapsed ? 'Show planet list' : 'Hide planet list');
+  planetDockToggle.setAttribute('aria-label', collapsed ? t('showList') : t('hideList'));
   playUiTone(collapsed ? 0 : 2, collapsed);
 });
 
@@ -1352,14 +1456,14 @@ function toggleTelescopeView(forceOpen) {
   document.body.classList.toggle('telescope-open', opening);
   telescopeOverlay?.setAttribute('aria-hidden', String(!opening));
   telescopeBtn?.setAttribute('aria-pressed', String(opening));
-  telescopeBtn?.setAttribute('aria-label', opening ? 'Close telescope Milky Way view' : 'Open telescope Milky Way view');
+  telescopeBtn?.setAttribute('aria-label', opening ? t('telescopeClose') : t('telescopeOpen'));
   telescopeBtn.textContent = opening ? '✕' : '🔭';
   if (telescopeOverlay) telescopeOverlay.style.display = opening ? 'block' : '';
   if (opening) {
     info.classList.remove('visible');
     resetLayerParallax();
     stopMainLoop();
-    if (telescopeFrame && !telescopeFrame.getAttribute('src')) telescopeFrame.setAttribute('src', 'milky_way_parallax.html');
+    if (telescopeFrame && !telescopeFrame.getAttribute('src')) telescopeFrame.setAttribute('src', `milky_way_parallax.html?lang=${currentLanguage}`);
   } else {
     resetLayerParallax();
     if (telescopeFrame) telescopeFrame.removeAttribute('src');
@@ -1379,6 +1483,8 @@ window.addEventListener('message', event => {
     toggleTelescopeView(false);
   }
 });
+
+languageSelect?.addEventListener('change', event => setLanguage(event.target.value));
 
 window.addEventListener('resize', () => { resize(); resizeSpinCanvas(); drawSpinPreview(performance.now()); });
 window.visualViewport?.addEventListener('resize', resize);
